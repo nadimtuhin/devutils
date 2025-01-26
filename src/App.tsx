@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter } from 'lucide-react';
+import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter, FileType } from 'lucide-react';
 import UnixTimeConverter from './components/UnixTimeConverter';
 import JsonValidator from './components/JsonValidator';
 import Base64Encoder from './components/Base64Encoder';
@@ -33,6 +33,9 @@ import JsonToCode from './components/JsonToCode';
 import CertificateDecoder from './components/CertificateDecoder';
 import HexAsciiConverter from './components/HexAsciiConverter';
 import LineSorter from './components/LineSorter';
+import CssMinifyBeautify from './components/CssMinifyBeautify';
+import JavaScriptMinifyBeautify from './components/JavaScriptMinifyBeautify';
+import HtmlMinifyBeautify from './components/HtmlMinifyBeautify';
 
 type Tool = {
   id: string;
@@ -45,6 +48,9 @@ function App() {
   const [activeTool, setActiveTool] = useState('unix-time');
 
   const tools: Tool[] = [
+    { id: 'css-minify-beautify', name: 'CSS Minify/Beautify', icon: <FileType size={20} />, component: <CssMinifyBeautify /> },
+    { id: 'js-minify-beautify', name: 'JavaScript Minify/Beautify', icon: <Code3 size={20} />, component: <JavaScriptMinifyBeautify /> },
+    { id: 'html-minify-beautify', name: 'HTML Minify/Beautify', icon: <FileText size={20} />, component: <HtmlMinifyBeautify /> },
     { id: 'markdown-preview', name: 'Markdown Preview', icon: <FileDown size={20} />, component: <MarkdownPreview /> },
     { id: 'sql-formatter', name: 'SQL Formatter', icon: <Database size={20} />, component: <SqlFormatter /> },
     { id: 'string-case', name: 'String Case Converter', icon: <Type size={20} />, component: <StringCaseConverter /> },
