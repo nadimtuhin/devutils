@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary } from 'lucide-react';
+import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter } from 'lucide-react';
 import UnixTimeConverter from './components/UnixTimeConverter';
 import JsonValidator from './components/JsonValidator';
 import Base64Encoder from './components/Base64Encoder';
@@ -27,6 +27,12 @@ import CronJobParser from './components/CronJobParser';
 import ColorConverter from './components/ColorConverter';
 import PhpJsonConverter from './components/PhpJsonConverter';
 import PhpSerializer from './components/PhpSerializer';
+import SvgToCss from './components/SvgToCss';
+import CurlToCode from './components/CurlToCode';
+import JsonToCode from './components/JsonToCode';
+import CertificateDecoder from './components/CertificateDecoder';
+import HexAsciiConverter from './components/HexAsciiConverter';
+import LineSorter from './components/LineSorter';
 
 type Tool = {
   id: string;
@@ -46,6 +52,12 @@ function App() {
     { id: 'color-converter', name: 'Color Converter', icon: <Palette size={20} />, component: <ColorConverter /> },
     { id: 'php-json', name: 'PHP ↔ JSON', icon: <ArrowLeftRight size={20} />, component: <PhpJsonConverter /> },
     { id: 'php-serializer', name: 'PHP Serializer', icon: <Binary size={20} />, component: <PhpSerializer /> },
+    { id: 'svg-css', name: 'SVG to CSS', icon: <FileImage size={20} />, component: <SvgToCss /> },
+    { id: 'curl-code', name: 'cURL to Code', icon: <Terminal size={20} />, component: <CurlToCode /> },
+    { id: 'json-code', name: 'JSON to Code', icon: <Code3 size={20} />, component: <JsonToCode /> },
+    { id: 'cert-decoder', name: 'Certificate Decoder', icon: <Shield size={20} />, component: <CertificateDecoder /> },
+    { id: 'hex-ascii', name: 'Hex ↔ ASCII', icon: <Sigma size={20} />, component: <HexAsciiConverter /> },
+    { id: 'line-sorter', name: 'Line Sort/Dedupe', icon: <ListFilter size={20} />, component: <LineSorter /> },
     { id: 'unix-time', name: 'Unix Time Converter', icon: <Clock size={20} />, component: <UnixTimeConverter /> },
     { id: 'json-validator', name: 'JSON Validator', icon: <FileJson size={20} />, component: <JsonValidator /> },
     { id: 'base64', name: 'Base64 Encoder/Decoder', icon: <Code2 size={20} />, component: <Base64Encoder /> },
