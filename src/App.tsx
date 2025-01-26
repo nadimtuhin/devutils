@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2 } from 'lucide-react';
+import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown } from 'lucide-react';
 import UnixTimeConverter from './components/UnixTimeConverter';
 import JsonValidator from './components/JsonValidator';
 import Base64Encoder from './components/Base64Encoder';
@@ -20,6 +20,7 @@ import JsonToCsv from './components/JsonToCsv';
 import CsvToJson from './components/CsvToJson';
 import HashGenerator from './components/HashGenerator';
 import HtmlToJsx from './components/HtmlToJsx';
+import MarkdownPreview from './components/MarkdownPreview';
 
 type Tool = {
   id: string;
@@ -32,6 +33,7 @@ function App() {
   const [activeTool, setActiveTool] = useState('unix-time');
 
   const tools: Tool[] = [
+    { id: 'markdown-preview', name: 'Markdown Preview', icon: <FileDown size={20} />, component: <MarkdownPreview /> },
     { id: 'unix-time', name: 'Unix Time Converter', icon: <Clock size={20} />, component: <UnixTimeConverter /> },
     { id: 'json-validator', name: 'JSON Validator', icon: <FileJson size={20} />, component: <JsonValidator /> },
     { id: 'base64', name: 'Base64 Encoder/Decoder', icon: <Code2 size={20} />, component: <Base64Encoder /> },
