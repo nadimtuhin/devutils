@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter, FileType } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter, FileType, Keyboard } from 'lucide-react';
 import UnixTimeConverter from './components/UnixTimeConverter';
 import JsonValidator from './components/JsonValidator';
 import Base64Encoder from './components/Base64Encoder';
@@ -36,6 +36,8 @@ import LineSorter from './components/LineSorter';
 import CssMinifyBeautify from './components/CssMinifyBeautify';
 import JavaScriptMinifyBeautify from './components/JavaScriptMinifyBeautify';
 import HtmlMinifyBeautify from './components/HtmlMinifyBeautify';
+import SpotlightSearch from './components/SpotlightSearch';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
 
 type Tool = {
   id: string;
@@ -46,6 +48,8 @@ type Tool = {
 
 function App() {
   const [activeTool, setActiveTool] = useState('unix-time');
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   const tools: Tool[] = [
     { id: 'css-minify-beautify', name: 'CSS Minify/Beautify', icon: <FileType size={20} />, component: <CssMinifyBeautify /> },
@@ -86,12 +90,51 @@ function App() {
     { id: 'html-jsx', name: 'HTML to JSX', icon: <Braces2 size={20} />, component: <HtmlToJsx /> }
   ];
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command/Control + K for spotlight
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSpotlightOpen(true);
+      }
+      // Control + Shift + P for spotlight
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setIsSpotlightOpen(true);
+      }
+      // Command/Control + ? for shortcuts
+      if ((e.metaKey || e.ctrlKey) && e.key === '?') {
+        e.preventDefault();
+        setIsShortcutsOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-lg overflow-y-auto">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-800">DevTools</h1>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setIsSpotlightOpen(true)}
+              className="p-1.5 hover:bg-gray-100 rounded"
+              title="Search (⌘K)"
+            >
+              <Search size={18} />
+            </button>
+            <button
+              onClick={() => setIsShortcutsOpen(true)}
+              className="p-1.5 hover:bg-gray-100 rounded"
+              title="Keyboard Shortcuts (⌘?)"
+            >
+              <Keyboard size={18} />
+            </button>
+          </div>
         </div>
         <nav className="p-2">
           {tools.map((tool) => (
@@ -117,6 +160,20 @@ function App() {
           {tools.find(tool => tool.id === activeTool)?.component}
         </div>
       </div>
+
+      {/* Spotlight Search */}
+      <SpotlightSearch
+        isOpen={isSpotlightOpen}
+        onClose={() => setIsSpotlightOpen(false)}
+        tools={tools}
+        onSelectTool={setActiveTool}
+      />
+
+      {/* Keyboard Shortcuts */}
+      <KeyboardShortcuts
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   );
 }
