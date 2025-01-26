@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown } from 'lucide-react';
+import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link, LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary } from 'lucide-react';
 import UnixTimeConverter from './components/UnixTimeConverter';
 import JsonValidator from './components/JsonValidator';
 import Base64Encoder from './components/Base64Encoder';
@@ -21,6 +21,12 @@ import CsvToJson from './components/CsvToJson';
 import HashGenerator from './components/HashGenerator';
 import HtmlToJsx from './components/HtmlToJsx';
 import MarkdownPreview from './components/MarkdownPreview';
+import SqlFormatter from './components/SqlFormatter';
+import StringCaseConverter from './components/StringCaseConverter';
+import CronJobParser from './components/CronJobParser';
+import ColorConverter from './components/ColorConverter';
+import PhpJsonConverter from './components/PhpJsonConverter';
+import PhpSerializer from './components/PhpSerializer';
 
 type Tool = {
   id: string;
@@ -34,6 +40,12 @@ function App() {
 
   const tools: Tool[] = [
     { id: 'markdown-preview', name: 'Markdown Preview', icon: <FileDown size={20} />, component: <MarkdownPreview /> },
+    { id: 'sql-formatter', name: 'SQL Formatter', icon: <Database size={20} />, component: <SqlFormatter /> },
+    { id: 'string-case', name: 'String Case Converter', icon: <Type size={20} />, component: <StringCaseConverter /> },
+    { id: 'cron-parser', name: 'Cron Job Parser', icon: <Timer size={20} />, component: <CronJobParser /> },
+    { id: 'color-converter', name: 'Color Converter', icon: <Palette size={20} />, component: <ColorConverter /> },
+    { id: 'php-json', name: 'PHP ↔ JSON', icon: <ArrowLeftRight size={20} />, component: <PhpJsonConverter /> },
+    { id: 'php-serializer', name: 'PHP Serializer', icon: <Binary size={20} />, component: <PhpSerializer /> },
     { id: 'unix-time', name: 'Unix Time Converter', icon: <Clock size={20} />, component: <UnixTimeConverter /> },
     { id: 'json-validator', name: 'JSON Validator', icon: <FileJson size={20} />, component: <JsonValidator /> },
     { id: 'base64', name: 'Base64 Encoder/Decoder', icon: <Code2 size={20} />, component: <Base64Encoder /> },
