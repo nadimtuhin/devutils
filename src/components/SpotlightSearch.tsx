@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Tool {
   id: string;
   name: string;
   icon: React.ReactNode;
+  url: string;
 }
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   tools: Tool[];
-  onSelectTool: (id: string) => void;
 }
 
-const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools, onSelectTool }) => {
+const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools }) => {
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const filteredTools = tools.filter(tool =>
     tool.name.toLowerCase().includes(search.toLowerCase())
@@ -30,6 +32,11 @@ const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools, onSelectTool
       setSelectedIndex(0);
     }
   }, [isOpen]);
+
+  const handleToolSelect = (tool: Tool) => {
+    navigate(tool.url);
+    onClose();
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -47,8 +54,7 @@ const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools, onSelectTool
         case 'Enter':
           e.preventDefault();
           if (filteredTools[selectedIndex]) {
-            onSelectTool(filteredTools[selectedIndex].id);
-            onClose();
+            handleToolSelect(filteredTools[selectedIndex]);
           }
           break;
         case 'Escape':
@@ -60,7 +66,7 @@ const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools, onSelectTool
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredTools, selectedIndex, onSelectTool, onClose]);
+  }, [isOpen, filteredTools, selectedIndex, onClose, handleToolSelect]);
 
   if (!isOpen) return null;
 
@@ -88,10 +94,7 @@ const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools, onSelectTool
               className={`w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 ${
                 index === selectedIndex ? 'bg-gray-100' : ''
               }`}
-              onClick={() => {
-                onSelectTool(tool.id);
-                onClose();
-              }}
+              onClick={() => handleToolSelect(tool)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
               <span className="text-gray-600">{tool.icon}</span>
