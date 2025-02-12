@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link as RouterLink, useLocation, Navigate } from 'react-router-dom';
-import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link as LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter, FileType, Keyboard, Github, Star, Info, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Clock, Code2, FileJson, FileCode, Image, Key, Search, Link as LinkIcon, Code, Braces, Hash, FileText, Diff, FileSpreadsheet, Text, RotateCw, FileCode2, Dices, Braces as Braces2, FileDown, Database, Type, Timer, Palette, ArrowLeftRight, Binary, FileImage, Terminal, Code as Code3, Shield, Sigma, ListFilter, FileType, Keyboard, Github, Star, Info, PanelLeftClose, PanelLeft, GripVertical } from 'lucide-react';
 import UnixTimeConverter from './components/UnixTimeConverter';
 import JsonValidator from './components/JsonValidator';
 import Base64Encoder from './components/Base64Encoder';
@@ -40,6 +40,7 @@ import HtmlMinifyBeautify from './components/HtmlMinifyBeautify';
 import SpotlightSearch from './components/SpotlightSearch';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import Credits from './components/Credits';
+import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
 type Tool = {
   id: string;
@@ -50,10 +51,29 @@ type Tool = {
   isEnabled: boolean;
 };
 
-function Layout({ tools }: { tools: Tool[] }) {
+function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [tools, setTools] = useState<Tool[]>(() => {
+    const savedOrder = localStorage.getItem('toolsOrder');
+    if (savedOrder) {
+      const orderIds = JSON.parse(savedOrder);
+      // Reconstruct tools array based on saved order
+      const orderedTools = orderIds.map((id: string) => 
+        defaultTools.find(tool => tool.id === id)
+      ).filter(Boolean);
+      
+      // Add any new tools that weren't in the saved order
+      const newTools = defaultTools.filter(
+        tool => !orderIds.includes(tool.id)
+      );
+      
+      return [...orderedTools, ...newTools];
+    }
+    return defaultTools;
+  });
+  
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -79,6 +99,20 @@ function Layout({ tools }: { tools: Tool[] }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const newTools = Array.from(tools);
+    const [reorderedTool] = newTools.splice(result.source.index, 1);
+    newTools.splice(result.destination.index, 0, reorderedTool);
+    
+    setTools(newTools);
+    
+    // Save the new order to localStorage
+    const orderIds = newTools.map(tool => tool.id);
+    localStorage.setItem('toolsOrder', JSON.stringify(orderIds));
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -149,21 +183,57 @@ function Layout({ tools }: { tools: Tool[] }) {
           )}
         </div>
         <nav className="p-2 flex-1">
-          {tools.filter(tool => tool.isEnabled).map((tool) => (
-            <RouterLink
-              key={tool.id}
-              to={tool.url}
-              className={`w-full flex items-center ${isSidebarExpanded ? 'space-x-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors ${
-                currentPath === tool.url
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              } no-underline`}
-              title={!isSidebarExpanded ? tool.name : undefined}
-            >
-              {tool.icon}
-              {isSidebarExpanded && <span className="text-sm font-medium">{tool.name}</span>}
-            </RouterLink>
-          ))}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="tools-list">
+              {(provided: DroppableProvided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  {tools.filter(tool => tool.isEnabled).map((tool, index) => (
+                    <Draggable 
+                      key={tool.id} 
+                      draggableId={tool.id} 
+                      index={index}
+                      isDragDisabled={!isSidebarExpanded}
+                    >
+                      {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`group mb-1 relative ${snapshot.isDragging ? 'opacity-50' : ''}`}
+                        >
+                          <RouterLink
+                            to={tool.url}
+                            className={`w-full flex items-center ${isSidebarExpanded ? 'space-x-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors ${
+                              currentPath === tool.url
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'text-gray-600 hover:bg-gray-50'
+                            } no-underline`}
+                            title={!isSidebarExpanded ? tool.name : undefined}
+                          >
+                            {isSidebarExpanded && (
+                              <div
+                                {...provided.dragHandleProps}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                              >
+                                <GripVertical size={16} className="text-gray-400" />
+                              </div>
+                            )}
+                            <div className={isSidebarExpanded ? 'ml-5' : ''}>
+                              {tool.icon}
+                            </div>
+                            {isSidebarExpanded && <span className="text-sm font-medium">{tool.name}</span>}
+                          </RouterLink>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </nav>
       </div>
 
@@ -209,14 +279,14 @@ function Layout({ tools }: { tools: Tool[] }) {
 
 function App() {
   const tools: Tool[] = [
-    { id: 'css-minify-beautify', name: 'CSS Minify/Beautify', icon: <FileType size={20} />, component: <CssMinifyBeautify />, url: '/css-minify-beautify', isEnabled: true },
-    { id: 'js-minify-beautify', name: 'JavaScript Minify/Beautify', icon: <Code3 size={20} />, component: <JavaScriptMinifyBeautify />, url: '/js-minify-beautify', isEnabled: true },
-    { id: 'html-minify-beautify', name: 'HTML Minify/Beautify', icon: <FileText size={20} />, component: <HtmlMinifyBeautify />, url: '/html-minify-beautify', isEnabled: true },
-    { id: 'markdown-preview', name: 'Markdown Preview', icon: <FileDown size={20} />, component: <MarkdownPreview />, url: '/markdown-preview', isEnabled: true },
+    { id: 'css-minify-beautify', name: 'CSS Minify/Beautify', icon: <FileType size={20} />, component: <CssMinifyBeautify />, url: '/css-minify-beautify', isEnabled: false },
+    { id: 'js-minify-beautify', name: 'JavaScript Minify/Beautify', icon: <Code3 size={20} />, component: <JavaScriptMinifyBeautify />, url: '/js-minify-beautify', isEnabled: false },
+    { id: 'html-minify-beautify', name: 'HTML Minify/Beautify', icon: <FileText size={20} />, component: <HtmlMinifyBeautify />, url: '/html-minify-beautify', isEnabled: false },
+    { id: 'markdown-preview', name: 'Markdown Preview', icon: <FileDown size={20} />, component: <MarkdownPreview />, url: '/markdown-preview', isEnabled: false },
     { id: 'sql-formatter', name: 'SQL Formatter', icon: <Database size={20} />, component: <SqlFormatter />, url: '/sql-formatter', isEnabled: true },
     { id: 'string-case', name: 'String Case Converter', icon: <Type size={20} />, component: <StringCaseConverter />, url: '/string-case', isEnabled: true },
     { id: 'cron-parser', name: 'Cron Job Parser', icon: <Timer size={20} />, component: <CronJobParser />, url: '/cron-parser', isEnabled: true },
-    { id: 'color-converter', name: 'Color Converter', icon: <Palette size={20} />, component: <ColorConverter />, url: '/color-converter', isEnabled: true },
+    { id: 'color-converter', name: 'Color Converter', icon: <Palette size={20} />, component: <ColorConverter />, url: '/color-converter', isEnabled: false },
     { id: 'php-json', name: 'PHP ↔ JSON', icon: <ArrowLeftRight size={20} />, component: <PhpJsonConverter />, url: '/php-json', isEnabled: true },
     { id: 'php-serializer', name: 'PHP Serializer', icon: <Binary size={20} />, component: <PhpSerializer />, url: '/php-serializer', isEnabled: true },
     { id: 'svg-css', name: 'SVG to CSS', icon: <FileImage size={20} />, component: <SvgToCss />, url: '/svg-css', isEnabled: true },
