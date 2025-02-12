@@ -9,6 +9,7 @@ type CssNode = {
   block?: { children: CssNode[] };
   property?: string;
   value?: { value: string };
+  name?: string;
 };
 
 export default function CssMinifyBeautify() {
@@ -18,6 +19,16 @@ export default function CssMinifyBeautify() {
   const [error, setError] = useState('');
 
   const handleConvert = () => {
+    // Clear previous error and output
+    setError('');
+    setOutput('');
+
+    // Check for empty input
+    if (!css.trim()) {
+      setError('Please enter some CSS code first');
+      return;
+    }
+
     try {
       if (mode === 'minify') {
         const minified = minify(css, {
@@ -27,7 +38,7 @@ export default function CssMinifyBeautify() {
         setOutput(minified.css);
       } else {
         // Parse the CSS to get AST
-        const ast = syntax.parse(css);
+        const ast = syntax.parse(css.trim());
         
         // Format the AST back to CSS with proper indentation
         let indentLevel = 0;
@@ -35,24 +46,33 @@ export default function CssMinifyBeautify() {
         
         const walk = (node: CssNode) => {
           if (node.type === 'StyleSheet') {
-            node.children?.forEach(walk);
+            node.children?.forEach((child) => walk(child));
           } else if (node.type === 'Rule' && node.prelude && node.block) {
-            beautified += '\n' + '  '.repeat(indentLevel) + node.prelude.value + ' {';
+            // Add newline before each rule unless it's the first one
+            if (beautified) beautified += '\n';
+            beautified += '  '.repeat(indentLevel) + node.prelude.value + ' {';
             indentLevel++;
-            node.block.children.forEach(walk);
+            node.block.children.forEach((child) => walk(child));
             indentLevel--;
             beautified += '\n' + '  '.repeat(indentLevel) + '}';
           } else if (node.type === 'Declaration' && node.property && node.value) {
             beautified += '\n' + '  '.repeat(indentLevel) + node.property + ': ' + node.value.value + ';';
+          } else if (node.type === 'Atrule' && node.prelude && node.block) {
+            // Handle at-rules like @media, @keyframes
+            if (beautified) beautified += '\n';
+            beautified += '  '.repeat(indentLevel) + '@' + node.name + ' ' + node.prelude.value + ' {';
+            indentLevel++;
+            node.block.children.forEach((child) => walk(child));
+            indentLevel--;
+            beautified += '\n' + '  '.repeat(indentLevel) + '}';
           }
         };
         
         walk(ast);
         setOutput(beautified.trim());
       }
-      setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process CSS');
+      setError(err instanceof Error ? err.message : 'Failed to process CSS. Please check your input for syntax errors.');
     }
   };
 
