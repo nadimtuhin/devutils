@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import CodeEditor from "@uiw/react-textarea-code-editor";
 import { Copy, FileText, Zap, AlertCircle } from "lucide-react";
 
-type Language = "typescript" | "python" | "java" | "go" | "swift" | "csharp";
+type Language =
+  | "typescript"
+  | "python"
+  | "java"
+  | "go"
+  | "swift"
+  | "csharp"
+  | "php";
 type JsonValue =
   | string
   | number
@@ -211,9 +218,11 @@ export default function JsonToCode() {
     obj: JsonValue,
     structName: string = "Root"
   ): string => {
-    if (typeof obj !== "object" || obj === null) return "";
+    if (typeof obj !== "object" || obj === null || Array.isArray(obj))
+      return "";
 
-    const lines: string[] = [`type ${structName} struct {`];
+    const structs: string[] = [];
+    const currentStruct: string[] = [`type ${structName} struct {`];
 
     for (const [key, value] of Object.entries(obj)) {
       const fieldName = key.charAt(0).toUpperCase() + key.slice(1);
@@ -223,20 +232,31 @@ export default function JsonToCode() {
         if (
           value.length > 0 &&
           typeof value[0] === "object" &&
-          value[0] !== null
+          value[0] !== null &&
+          !Array.isArray(value[0])
         ) {
           const arrayStructName = `${structName}${fieldName}Item`;
-          lines.push(`    ${fieldName} []${arrayStructName} \`json:"${key}"\``);
-          lines.push("}\n");
-          lines.push(generateGoStruct(value[0], arrayStructName));
+          currentStruct.push(
+            `    ${fieldName} []${arrayStructName} \`json:"${key}"\``
+          );
+          // Generate nested struct for array items
+          const nestedStruct = generateGoStruct(value[0], arrayStructName);
+          if (nestedStruct) {
+            structs.push(nestedStruct);
+          }
           continue;
         }
         type = "[]interface{}";
       } else if (type === "object" && value !== null) {
         const nestedStructName = `${structName}${fieldName}`;
-        lines.push(`    ${fieldName} ${nestedStructName} \`json:"${key}"\``);
-        lines.push("}\n");
-        lines.push(generateGoStruct(value, nestedStructName));
+        currentStruct.push(
+          `    ${fieldName} ${nestedStructName} \`json:"${key}"\``
+        );
+        // Generate nested struct
+        const nestedStruct = generateGoStruct(value, nestedStructName);
+        if (nestedStruct) {
+          structs.push(nestedStruct);
+        }
         continue;
       } else if (type === "string") {
         type = "string";
@@ -246,14 +266,19 @@ export default function JsonToCode() {
         type = "bool";
       }
 
-      lines.push(`    ${fieldName} ${type} \`json:"${key}"\``);
+      currentStruct.push(`    ${fieldName} ${type} \`json:"${key}"\``);
     }
 
-    if (lines[lines.length - 1] !== "}\n") {
-      lines.push("}");
+    currentStruct.push("}");
+
+    // Put the main struct first, then nested structs
+    const result = [currentStruct.join("\n")];
+    if (structs.length > 0) {
+      result.push("");
+      result.push(...structs);
     }
 
-    return lines.join("\n");
+    return result.join("\n");
   };
 
   const generateSwiftStruct = (
@@ -361,6 +386,125 @@ export default function JsonToCode() {
     return lines.join("\n");
   };
 
+  const generatePhpClass = (
+    obj: JsonValue,
+    className: string = "Root"
+  ): string => {
+    if (typeof obj !== "object" || obj === null || Array.isArray(obj))
+      return "";
+
+    const classes: string[] = [];
+    const currentClass: string[] = ["<?php", "", `class ${className}`, "{"];
+
+    // Add properties
+    for (const [key, value] of Object.entries(obj)) {
+      let type: string = typeof value;
+      let phpType: string = "mixed";
+
+      if (Array.isArray(value)) {
+        if (
+          value.length > 0 &&
+          typeof value[0] === "object" &&
+          value[0] !== null &&
+          !Array.isArray(value[0])
+        ) {
+          const arrayClassName = `${className}${key.charAt(0).toUpperCase() + key.slice(1)}Item`;
+          phpType = `${arrayClassName}[]`;
+          currentClass.push(`    /**`);
+          currentClass.push(`     * @var ${phpType}`);
+          currentClass.push(`     */`);
+          currentClass.push(`    public array $${key};`);
+          currentClass.push("");
+          // Generate nested class for array items
+          const nestedClass = generatePhpClass(value[0], arrayClassName);
+          if (nestedClass) {
+            classes.push(nestedClass);
+          }
+          continue;
+        }
+        phpType = "array";
+      } else if (type === "object" && value !== null) {
+        const nestedClassName = `${className}${key.charAt(0).toUpperCase() + key.slice(1)}`;
+        phpType = nestedClassName;
+        currentClass.push(`    /**`);
+        currentClass.push(`     * @var ${phpType}`);
+        currentClass.push(`     */`);
+        currentClass.push(`    public ${phpType} $${key};`);
+        currentClass.push("");
+        // Generate nested class
+        const nestedClass = generatePhpClass(value, nestedClassName);
+        if (nestedClass) {
+          classes.push(nestedClass);
+        }
+        continue;
+      } else if (type === "string") {
+        phpType = "string";
+      } else if (type === "number") {
+        phpType = "float";
+      } else if (type === "boolean") {
+        phpType = "bool";
+      }
+
+      currentClass.push(`    /**`);
+      currentClass.push(`     * @var ${phpType}`);
+      currentClass.push(`     */`);
+      currentClass.push(
+        `    public ${phpType === "array" ? "array" : phpType} $${key};`
+      );
+      currentClass.push("");
+    }
+
+    // Add constructor
+    currentClass.push(`    public function __construct(array $data = [])`);
+    currentClass.push(`    {`);
+    for (const [key, value] of Object.entries(obj)) {
+      if (Array.isArray(value)) {
+        if (
+          value.length > 0 &&
+          typeof value[0] === "object" &&
+          value[0] !== null &&
+          !Array.isArray(value[0])
+        ) {
+          const arrayClassName = `${className}${key.charAt(0).toUpperCase() + key.slice(1)}Item`;
+          currentClass.push(
+            `        $this->${key} = array_map(fn($item) => new ${arrayClassName}($item), $data['${key}'] ?? []);`
+          );
+        } else {
+          currentClass.push(`        $this->${key} = $data['${key}'] ?? [];`);
+        }
+      } else if (typeof value === "object" && value !== null) {
+        const nestedClassName = `${className}${key.charAt(0).toUpperCase() + key.slice(1)}`;
+        currentClass.push(
+          `        $this->${key} = new ${nestedClassName}($data['${key}'] ?? []);`
+        );
+      } else {
+        const defaultValue =
+          typeof value === "string"
+            ? "''"
+            : typeof value === "number"
+              ? "0"
+              : typeof value === "boolean"
+                ? "false"
+                : "null";
+        currentClass.push(
+          `        $this->${key} = $data['${key}'] ?? ${defaultValue};`
+        );
+      }
+    }
+    currentClass.push(`    }`);
+
+    currentClass.push("}");
+
+    // Put the main class first, then nested classes
+    const result = [currentClass.join("\n")];
+    if (classes.length > 0) {
+      result.push("");
+      result.push(...classes);
+    }
+
+    return result.join("\n");
+  };
+
   const handleConvert = () => {
     if (!json.trim()) {
       setError("Please enter JSON data");
@@ -391,6 +535,9 @@ export default function JsonToCode() {
           break;
         case "csharp":
           converted = generateCSharpClass(parsedJson);
+          break;
+        case "php":
+          converted = generatePhpClass(parsedJson);
           break;
         default:
           converted = "// Conversion for this language is not implemented yet";
@@ -479,6 +626,7 @@ export default function JsonToCode() {
               <option value="go">Go</option>
               <option value="swift">Swift</option>
               <option value="csharp">C#</option>
+              <option value="php">PHP</option>
             </select>
           </div>
 
