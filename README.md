@@ -48,6 +48,60 @@ npm install
 npm run dev
 ```
 
+## 🔒 Security Scanning
+
+This project uses [Trivy](https://trivy.dev/) for security vulnerability scanning. 
+
+### Installing Trivy
+
+First, install Trivy on your system:
+
+**macOS (using Homebrew):**
+```bash
+brew install trivy
+```
+
+**Linux:**
+```bash
+sudo apt-get install wget apt-transport-https gnupg lsb-release
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy
+```
+
+**Windows (using Chocolatey):**
+```bash
+choco install trivy
+```
+
+**Or download directly from [GitHub releases](https://github.com/aquasecurity/trivy/releases)**
+
+### Running Security Scans
+
+Once Trivy is installed, you can run security scans using these npm scripts:
+
+```bash
+# Full security scan (vulnerabilities, secrets, config issues)
+npm run security:scan
+
+# Scan only dependencies
+npm run security:scan-deps
+
+# Generate JSON report
+npm run security:scan-json
+
+# Generate HTML report
+npm run security:scan-html
+```
+
+The project also includes automated security scanning via GitHub Actions that runs on:
+- Every push to main/develop branches
+- Every pull request
+- Weekly scheduled scans
+
+Security reports are automatically uploaded to the GitHub Security tab for review.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

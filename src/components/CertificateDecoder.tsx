@@ -9,86 +9,146 @@ export default function CertificateDecoder() {
     try {
       // Remove headers and footers and clean whitespace
       const cleanCert = cert
-        .replace(/-----BEGIN CERTIFICATE-----/, '')
-        .replace(/-----END CERTIFICATE-----/, '')
-        .replace(/\\s/g, '');
+        .replace(/-----BEGIN CERTIFICATE-----/g, '')
+        .replace(/-----END CERTIFICATE-----/g, '')
+        .replace(/\s/g, '');
+
+      if (!cleanCert) {
+        return 'Please enter a valid certificate';
+      }
 
       // Decode base64 to binary
       const binary = atob(cleanCert);
       
-      // Convert binary to hex
-      const hex = Array.from(binary)
-        .map(char => char.charCodeAt(0).toString(16).padStart(2, '0'))
-        .join('');
-
-      // Basic ASN.1 parsing (simplified)
-      let result = '';
-      let position = 0;
-
-      const readLength = (pos: number): [number, number] => {
-        let len = parseInt(hex.substr(pos * 2, 2), 16);
-        let bytesRead = 1;
-
-        if (len & 0x80) {
-          const lenBytes = len & 0x7f;
-          len = parseInt(hex.substr((pos + 1) * 2, lenBytes * 2), 16);
-          bytesRead += lenBytes;
-        }
-
-        return [len, bytesRead];
-      };
-
-      const readString = (pos: number, len: number): string => {
-        const bytes = hex.substr(pos * 2, len * 2);
-        let str = '';
-        for (let i = 0; i < bytes.length; i += 2) {
-          str += String.fromCharCode(parseInt(bytes.substr(i, 2), 16));
-        }
-        return str;
-      };
-
-      while (position < binary.length) {
-        const tag = parseInt(hex.substr(position * 2, 2), 16);
-        position += 1;
-
-        const [length, bytesRead] = readLength(position);
-        position += bytesRead;
-
-        switch (tag) {
-          case 0x30: // SEQUENCE
-            result += 'SEQUENCE\\n';
-            break;
-          case 0x31: // SET
-            result += 'SET\\n';
-            break;
-          case 0x02: // INTEGER
-            result += `INTEGER: ${hex.substr(position * 2, length * 2)}\\n`;
-            break;
-          case 0x06: // OBJECT IDENTIFIER
-            result += `OBJECT IDENTIFIER: ${readString(position, length)}\\n`;
-            break;
-          case 0x13: // PRINTABLE STRING
-          case 0x0C: // UTF8 STRING
-          case 0x16: // IA5STRING
-            result += `STRING: ${readString(position, length)}\\n`;
-            break;
-          case 0x17: // UTC TIME
-            result += `UTC TIME: ${readString(position, length)}\\n`;
-            break;
-          default:
-            result += `TAG ${tag.toString(16)}: ${hex.substr(position * 2, length * 2)}\\n`;
-        }
-
-        position += length;
+      // Convert binary to Uint8Array for easier processing
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
       }
 
+      // Parse the certificate using a more robust approach
+      const result = parseCertificate(bytes);
       return result;
     } catch (error) {
       if (error instanceof Error) {
         return `Error: ${error.message}`;
       }
-      return 'Error decoding certificate';
+      return 'Error decoding certificate. Please ensure you have pasted a valid X.509 certificate.';
     }
+  };
+
+  const parseCertificate = (bytes: Uint8Array): string => {
+    let result = 'X.509 Certificate Information:\n';
+    result += '=' .repeat(40) + '\n\n';
+
+    try {
+      // Basic certificate structure parsing
+      const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+      
+      result += `Certificate Length: ${bytes.length} bytes\n`;
+      result += `Certificate Hex: ${hex.substring(0, 64)}${hex.length > 64 ? '...' : ''}\n\n`;
+
+      // Try to extract some basic information using simple pattern matching
+      const certString = Array.from(bytes, byte => 
+        (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.'
+      ).join('');
+
+      // Look for common certificate fields
+      const commonNames = extractField(certString, 'CN=');
+      const organizations = extractField(certString, 'O=');
+      const countries = extractField(certString, 'C=');
+      const organizationalUnits = extractField(certString, 'OU=');
+
+      if (commonNames.length > 0) {
+        result += 'Common Names (CN):\n';
+        commonNames.forEach(cn => result += `  - ${cn}\n`);
+        result += '\n';
+      }
+
+      if (organizations.length > 0) {
+        result += 'Organizations (O):\n';
+        organizations.forEach(org => result += `  - ${org}\n`);
+        result += '\n';
+      }
+
+      if (organizationalUnits.length > 0) {
+        result += 'Organizational Units (OU):\n';
+        organizationalUnits.forEach(ou => result += `  - ${ou}\n`);
+        result += '\n';
+      }
+
+      if (countries.length > 0) {
+        result += 'Countries (C):\n';
+        countries.forEach(country => result += `  - ${country}\n`);
+        result += '\n';
+      }
+
+      // Try to find dates (simplified approach)
+      const datePattern = /(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z/g;
+      const dates = [];
+      let match;
+      while ((match = datePattern.exec(certString)) !== null) {
+        const year = parseInt(match[1]) < 50 ? 2000 + parseInt(match[1]) : 1900 + parseInt(match[1]);
+        const date = new Date(year, parseInt(match[2]) - 1, parseInt(match[3]), 
+                             parseInt(match[4]), parseInt(match[5]), parseInt(match[6]));
+        dates.push(date.toISOString());
+      }
+
+      if (dates.length >= 2) {
+        result += `Valid From: ${dates[0]}\n`;
+        result += `Valid To: ${dates[1]}\n\n`;
+      }
+
+      // Certificate fingerprint (SHA-1 simulation using simple hash)
+      result += `Certificate Fingerprint (simplified): ${generateSimpleFingerprint(bytes)}\n\n`;
+
+      result += 'Raw Certificate Data (first 500 chars):\n';
+      result += '-'.repeat(40) + '\n';
+      result += certString.substring(0, 500);
+      if (certString.length > 500) {
+        result += '\n... (truncated)';
+      }
+
+      return result;
+    } catch (error) {
+      return `Error parsing certificate: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  };
+
+  const extractField = (certString: string, fieldPrefix: string): string[] => {
+    const fields: string[] = [];
+    let index = 0;
+    
+    while ((index = certString.indexOf(fieldPrefix, index)) !== -1) {
+      index += fieldPrefix.length;
+      let endIndex = index;
+      
+      // Find the end of the field value
+      while (endIndex < certString.length && 
+             certString[endIndex] !== ',' && 
+             certString[endIndex] !== '\0' &&
+             certString[endIndex] !== '\n' &&
+             certString[endIndex] !== '\r' &&
+             endIndex - index < 100) {
+        endIndex++;
+      }
+      
+      const value = certString.substring(index, endIndex).trim();
+      if (value && value.length > 0 && !fields.includes(value)) {
+        fields.push(value);
+      }
+    }
+    
+    return fields;
+  };
+
+  const generateSimpleFingerprint = (bytes: Uint8Array): string => {
+    // Simple hash function for demonstration
+    let hash = 0;
+    for (let i = 0; i < bytes.length; i++) {
+      hash = ((hash << 5) - hash + bytes[i]) & 0xffffffff;
+    }
+    return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
   };
 
   const handleDecode = () => {
@@ -110,7 +170,8 @@ export default function CertificateDecoder() {
             padding={15}
             className="h-[500px] font-mono text-sm border border-gray-300 rounded-md"
             style={{
-              backgroundColor: '#f9fafb',
+              backgroundColor: '#ffffff',
+              color: '#1f2937',
               fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
             }}
           />
@@ -125,12 +186,14 @@ export default function CertificateDecoder() {
             className="h-[500px] font-mono text-sm border border-gray-300 rounded-md bg-gray-50"
             style={{
               backgroundColor: '#f9fafb',
+              color: '#374151',
               fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
             }}
           />
         </div>
       </div>
       <button
+        type="button"
         onClick={handleDecode}
         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
