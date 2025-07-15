@@ -1,0 +1,33 @@
+# Node modules (will be scanned via package-lock.json)
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Screenshots
+screenshots/
+
+# Temporary files
+tmp.json
+
+# Git directory
+.git/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Coverage reports
+coverage/
+
+# Test artifacts
+*.test.js.map
+*.test.ts.map 
