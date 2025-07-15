@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
+import md5 from 'blueimp-md5';
 
 async function generateHash(text: string, algorithm: string): Promise<string> {
+  if (algorithm === 'MD5') {
+    // blueimp-md5 returns a hex string
+    return md5(text);
+  }
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
   const hashBuffer = await crypto.subtle.digest(algorithm, data);
