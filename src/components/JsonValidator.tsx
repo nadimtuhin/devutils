@@ -31,9 +31,19 @@ export default function JsonValidator() {
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Formatted Output</label>
-          <pre className={`w-full h-96 px-3 py-2 border border-gray-300 rounded-md overflow-auto ${error ? 'text-red-600' : ''}`}>
-            {error || output}
-          </pre>
+          <div className="flex items-center space-x-2">
+            <pre className={`w-full h-96 px-3 py-2 border border-gray-300 rounded-md overflow-auto ${error ? 'text-red-600' : ''}`}>
+              {error || output}
+            </pre>
+            <button
+              onClick={() => navigator.clipboard.writeText(output)}
+              disabled={!output || !!error}
+              className={`px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${(!output || !!error) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Copy formatted JSON"
+            >
+              Copy
+            </button>
+          </div>
         </div>
       </div>
       <button

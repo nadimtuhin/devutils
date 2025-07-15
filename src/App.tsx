@@ -40,7 +40,10 @@ import HtmlMinifyBeautify from './components/HtmlMinifyBeautify';
 import SpotlightSearch from './components/SpotlightSearch';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import Credits from './components/Credits';
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided, DraggableStateSnapshot } from 'react-beautiful-dnd';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type Tool = {
   id: string;
@@ -50,6 +53,78 @@ type Tool = {
   url: string;
   isEnabled: boolean;
 };
+
+function SortableToolItem({ tool, currentPath, isSidebarExpanded }: { 
+  tool: Tool; 
+  currentPath: string; 
+  isSidebarExpanded: boolean; 
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: tool.id });
+
+  const [isDragStarted, setIsDragStarted] = useState(false);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handleMouseDown = () => {
+    setIsDragStarted(false);
+  };
+
+  const handleDragStart = () => {
+    setIsDragStarted(true);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent navigation if drag was initiated
+    if (isDragStarted) {
+      e.preventDefault();
+      return;
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onMouseDown={handleMouseDown}
+      onDragStart={handleDragStart}
+      className={`group mb-1 relative cursor-grab active:cursor-grabbing ${isDragging ? 'z-50' : ''}`}
+    >
+      <RouterLink
+        to={tool.url}
+        onClick={handleClick}
+        className={`w-full flex items-center ${isSidebarExpanded ? 'space-x-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors ${
+          currentPath === tool.url
+            ? 'bg-blue-50 text-blue-600'
+            : 'text-gray-600 hover:bg-gray-50'
+        } no-underline`}
+        title={!isSidebarExpanded ? tool.name : undefined}
+      >
+        {isSidebarExpanded && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical size={16} className="text-gray-400" />
+          </div>
+        )}
+        <div className={isSidebarExpanded ? 'ml-5' : ''}>
+          {tool.icon}
+        </div>
+        {isSidebarExpanded && <span className="text-sm font-medium">{tool.name}</span>}
+      </RouterLink>
+    </div>
+  );
+}
 
 function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
@@ -100,18 +175,39 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-    const newTools = Array.from(tools);
-    const [reorderedTool] = newTools.splice(result.source.index, 1);
-    newTools.splice(result.destination.index, 0, reorderedTool);
-    
-    setTools(newTools);
-    
-    // Save the new order to localStorage
-    const orderIds = newTools.map(tool => tool.id);
-    localStorage.setItem('toolsOrder', JSON.stringify(orderIds));
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const enabledTools = tools.filter(tool => tool.isEnabled);
+      const oldIndex = enabledTools.findIndex(tool => tool.id === active.id);
+      const newIndex = enabledTools.findIndex(tool => tool.id === over.id);
+      
+      const reorderedEnabledTools = arrayMove(enabledTools, oldIndex, newIndex);
+      
+      // Reconstruct the full tools array with disabled tools in their original positions
+      const newTools = tools.map(tool => {
+        if (!tool.isEnabled) return tool;
+        return reorderedEnabledTools.find(t => t.id === tool.id) || tool;
+      });
+      
+      // Replace enabled tools section with reordered tools
+      const disabledTools = newTools.filter(tool => !tool.isEnabled);
+      const finalTools = [...reorderedEnabledTools, ...disabledTools];
+      
+      setTools(finalTools);
+      
+      // Save the new order to localStorage
+      const orderIds = finalTools.map(tool => tool.id);
+      localStorage.setItem('toolsOrder', JSON.stringify(orderIds));
+    }
   };
 
   return (
@@ -183,57 +279,25 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
           )}
         </div>
         <nav className="p-2 flex-1">
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="tools-list">
-              {(provided: DroppableProvided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                >
-                  {tools.filter(tool => tool.isEnabled).map((tool, index) => (
-                    <Draggable 
-                      key={tool.id} 
-                      draggableId={tool.id} 
-                      index={index}
-                      isDragDisabled={!isSidebarExpanded}
-                    >
-                      {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={`group mb-1 relative ${snapshot.isDragging ? 'opacity-50' : ''}`}
-                        >
-                          <RouterLink
-                            to={tool.url}
-                            className={`w-full flex items-center ${isSidebarExpanded ? 'space-x-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors ${
-                              currentPath === tool.url
-                                ? 'bg-blue-50 text-blue-600'
-                                : 'text-gray-600 hover:bg-gray-50'
-                            } no-underline`}
-                            title={!isSidebarExpanded ? tool.name : undefined}
-                          >
-                            {isSidebarExpanded && (
-                              <div
-                                {...provided.dragHandleProps}
-                                className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-                              >
-                                <GripVertical size={16} className="text-gray-400" />
-                              </div>
-                            )}
-                            <div className={isSidebarExpanded ? 'ml-5' : ''}>
-                              {tool.icon}
-                            </div>
-                            {isSidebarExpanded && <span className="text-sm font-medium">{tool.name}</span>}
-                          </RouterLink>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={tools.filter(tool => tool.isEnabled).map(tool => tool.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {tools.filter(tool => tool.isEnabled).map((tool) => (
+                <SortableToolItem
+                  key={tool.id}
+                  tool={tool}
+                  currentPath={currentPath}
+                  isSidebarExpanded={isSidebarExpanded}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </nav>
       </div>
 
