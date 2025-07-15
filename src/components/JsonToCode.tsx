@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CodeEditor from "@uiw/react-textarea-code-editor";
 import { Copy, FileText, Zap, AlertCircle } from "lucide-react";
 
@@ -9,7 +9,8 @@ type Language =
   | "go"
   | "swift"
   | "csharp"
-  | "php";
+  | "php"
+  | "kotlin";
 type JsonValue =
   | string
   | number
@@ -20,7 +21,10 @@ type JsonValue =
 
 export default function JsonToCode() {
   const [json, setJson] = useState("");
-  const [language, setLanguage] = useState<Language>("typescript");
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem("jsonToCode-language");
+    return (saved as Language) || "go";
+  });
   const [code, setCode] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [autoConvert, setAutoConvert] = useState(true);
@@ -398,7 +402,7 @@ export default function JsonToCode() {
 
     // Add properties
     for (const [key, value] of Object.entries(obj)) {
-      let type: string = typeof value;
+      const type: string = typeof value;
       let phpType: string = "mixed";
 
       if (Array.isArray(value)) {
@@ -505,7 +509,90 @@ export default function JsonToCode() {
     return result.join("\n");
   };
 
-  const handleConvert = () => {
+  const generateKotlinClass = (
+    obj: JsonValue,
+    className: string = "Root"
+  ): string => {
+    if (typeof obj !== "object" || obj === null || Array.isArray(obj))
+      return "";
+
+    const classes: string[] = [];
+    const currentClass: string[] = [
+      "import kotlinx.serialization.Serializable",
+      "import kotlinx.serialization.SerialName",
+      "",
+      "@Serializable",
+      `data class ${className}(`
+    ];
+
+    const properties: string[] = [];
+
+    for (const [key, value] of Object.entries(obj)) {
+      const type: string = typeof value;
+      let kotlinType: string = "Any";
+
+      if (Array.isArray(value)) {
+        if (
+          value.length > 0 &&
+          typeof value[0] === "object" &&
+          value[0] !== null &&
+          !Array.isArray(value[0])
+        ) {
+          const arrayClassName = `${className}${key.charAt(0).toUpperCase() + key.slice(1)}Item`;
+          kotlinType = `List<${arrayClassName}>`;
+          properties.push(`    @SerialName("${key}")`);
+          properties.push(`    val ${key}: ${kotlinType}`);
+          // Generate nested class for array items
+          const nestedClass = generateKotlinClass(value[0], arrayClassName);
+          if (nestedClass) {
+            classes.push(nestedClass);
+          }
+          continue;
+        }
+        kotlinType = "List<Any>";
+      } else if (type === "object" && value !== null) {
+        const nestedClassName = `${className}${key.charAt(0).toUpperCase() + key.slice(1)}`;
+        kotlinType = nestedClassName;
+        properties.push(`    @SerialName("${key}")`);
+        properties.push(`    val ${key}: ${kotlinType}`);
+        // Generate nested class
+        const nestedClass = generateKotlinClass(value, nestedClassName);
+        if (nestedClass) {
+          classes.push(nestedClass);
+        }
+        continue;
+      } else if (type === "string") {
+        kotlinType = "String";
+      } else if (type === "number") {
+        kotlinType = "Double";
+      } else if (type === "boolean") {
+        kotlinType = "Boolean";
+      }
+
+      properties.push(`    @SerialName("${key}")`);
+      properties.push(`    val ${key}: ${kotlinType}`);
+    }
+
+    // Add properties to class with proper comma separation
+    for (let i = 0; i < properties.length; i += 2) {
+      currentClass.push(properties[i]); // @SerialName annotation
+      const isLast = i + 2 >= properties.length;
+      currentClass.push(properties[i + 1] + (isLast ? "" : ",")); // property declaration
+    }
+
+    currentClass.push(")");
+
+    // Put the main class first, then nested classes
+    const result = [currentClass.join("\n")];
+    if (classes.length > 0) {
+      result.push("");
+      result.push(...classes);
+    }
+
+    return result.join("\n");
+  };
+
+  const handleConvert = useCallback(() => {
     if (!json.trim()) {
       setError("Please enter JSON data");
       setCode("");
@@ -539,6 +626,9 @@ export default function JsonToCode() {
         case "php":
           converted = generatePhpClass(parsedJson);
           break;
+        case "kotlin":
+          converted = generateKotlinClass(parsedJson);
+          break;
         default:
           converted = "// Conversion for this language is not implemented yet";
       }
@@ -553,7 +643,7 @@ export default function JsonToCode() {
         setCode("");
       }
     }
-  };
+  });
 
   const handleCopy = async () => {
     if (!code) return;
@@ -574,6 +664,11 @@ export default function JsonToCode() {
     }
   };
 
+  // Save language preference to localStorage
+  useEffect(() => {
+    localStorage.setItem("jsonToCode-language", language);
+  }, [language]);
+
   // Auto convert when JSON or language changes
   useEffect(() => {
     if (autoConvert && json.trim()) {
@@ -582,7 +677,7 @@ export default function JsonToCode() {
       }, 500);
       return () => clearTimeout(timeoutId);
     }
-  }, [json, language, autoConvert]);
+  }, [json, language, autoConvert, handleConvert]);
 
   const addLineNumbers = (text: string): string => {
     if (!showLineNumbers || !text) return text;
@@ -627,6 +722,7 @@ export default function JsonToCode() {
               <option value="swift">Swift</option>
               <option value="csharp">C#</option>
               <option value="php">PHP</option>
+              <option value="kotlin">Kotlin</option>
             </select>
           </div>
 
@@ -737,11 +833,12 @@ export default function JsonToCode() {
             language={language}
             readOnly
             padding={15}
-            className="h-[600px] font-mono text-sm border border-gray-300 rounded-md bg-gray-50"
+            className="h-[600px] font-mono text-sm border border-gray-300 rounded-md bg-gray-50 overflow-auto"
             style={{
               backgroundColor: "#f9fafb",
               fontFamily:
                 "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
+              overflow: "auto",
             }}
           />
         </div>
