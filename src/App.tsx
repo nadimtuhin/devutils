@@ -51,7 +51,7 @@ import {
 } from "lucide-react";
 import UnixTimeConverter from "./components/UnixTimeConverter";
 import JsonValidator from "./components/JsonValidator";
-import Base64Encoder from "./components/Base64Encoder";
+import { Base64SideBySide } from "./components/Base64SideBySide";
 import Base64ImageEncoder from "./components/Base64ImageEncoder";
 import JwtDebugger from "./components/JwtDebugger";
 import RegexpTester from "./components/RegexpTester";
@@ -513,7 +513,7 @@ function App() {
       id: "base64",
       name: "Base64 Encoder/Decoder",
       icon: <Code2 size={20} />,
-      component: <Base64Encoder />,
+      component: <Base64SideBySide />,
       url: "/base64",
       isEnabled: true,
     },
