@@ -63,6 +63,7 @@ import UuidGenerator from "./components/UuidGenerator";
 import HtmlPreview from "./components/HtmlPreview";
 import TextDiff from "./components/TextDiff";
 import YamlToJson from "./components/YamlToJson";
+import YamlFormatter from "./components/YamlFormatter";
 import NumberBaseConverter from "./components/NumberBaseConverter";
 import LoremIpsum from "./components/LoremIpsum";
 import JsonToCsv from "./components/JsonToCsv";
@@ -434,6 +435,14 @@ function App() {
       icon: <FileSpreadsheet size={20} />,
       component: <YamlToJson />,
       url: "/yaml-json",
+      isEnabled: true,
+    },
+    {
+      id: "yaml-formatter",
+      name: "YAML Formatter",
+      icon: <FileCode size={20} />,
+      component: <YamlFormatter />,
+      url: "/yaml-formatter",
       isEnabled: true,
     },
     {
