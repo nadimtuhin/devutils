@@ -406,7 +406,7 @@ metadata:
 
   return (
     <div className="max-w-6xl">
-      <h2 className="text-2xl font-bold mb-6">YAML Formatter</h2>
+      <h2 className="text-2xl font-bold mb-6">YAML Formatter & Validator</h2>
 
       {/* Controls */}
       <div className="mb-6 flex flex-wrap items-center gap-4">

@@ -439,7 +439,7 @@ function App() {
     },
     {
       id: "yaml-formatter",
-      name: "YAML Formatter",
+      name: "YAML Formatter & Validator",
       icon: <FileCode size={20} />,
       component: <YamlFormatter />,
       url: "/yaml-formatter",
