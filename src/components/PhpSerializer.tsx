@@ -11,6 +11,253 @@ const PhpSerializer = () => {
   const referenceMap = new Map<any, number>();
   const referenceCounter = { count: 1 };
 
+  // PHP Array/Object Syntax Parser
+  const parsePhpSyntax = (phpCode: string): any => {
+    // Remove whitespace and comments
+    let code = phpCode.trim().replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    
+    // Handle different PHP array syntaxes
+    if (code === '' || code === 'null') {
+      return null;
+    }
+    if (code === 'true') {
+      return true;
+    }
+    if (code === 'false') {
+      return false;
+    }
+    
+    // Handle numbers
+    if (/^-?\d+$/.test(code)) {
+      return parseInt(code, 10);
+    }
+    if (/^-?\d*\.\d+$/.test(code)) {
+      return parseFloat(code);
+    }
+    
+    // Handle strings
+    if ((code.startsWith("'") && code.endsWith("'")) || (code.startsWith('"') && code.endsWith('"'))) {
+      return code.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, '\\').replace(/\\"/g, '"');
+    }
+    
+    // Handle arrays - both array() and [] syntax
+    if (code.startsWith('array(') && code.endsWith(')')) {
+      const innerCode = code.slice(6, -1).trim();
+      return parsePhpArray(innerCode);
+    }
+    if (code.startsWith('[') && code.endsWith(']')) {
+      const innerCode = code.slice(1, -1).trim();
+      return parsePhpArray(innerCode);
+    }
+    
+    // Handle objects with new ClassName() syntax
+    const objectMatch = code.match(/^new\s+(\w+)\s*\((.*)\)$/);
+    if (objectMatch) {
+      const className = objectMatch[1];
+      const props = parsePhpArray(objectMatch[2]);
+      return { __class: className, ...props };
+    }
+    
+    throw new Error(`Unable to parse PHP syntax: ${code.slice(0, 50)}...`);
+  };
+  
+  const parsePhpArray = (innerCode: string): any => {
+    if (!innerCode.trim()) {
+      return [];
+    }
+    
+    const result: any = {};
+    const items = splitPhpArrayItems(innerCode);
+    let isSequential = true;
+    let expectedIndex = 0;
+    
+    for (const item of items) {
+      const arrowIndex = findPhpArrowOperator(item);
+      
+      if (arrowIndex !== -1) {
+        // Key-value pair
+        const keyPart = item.slice(0, arrowIndex).trim();
+        const valuePart = item.slice(arrowIndex + 2).trim();
+        
+        const key = parsePhpSyntax(keyPart);
+        const value = parsePhpSyntax(valuePart);
+        result[key] = value;
+        
+        if (typeof key !== 'number' || key !== expectedIndex) {
+          isSequential = false;
+        }
+      } else {
+        // Sequential item
+        const value = parsePhpSyntax(item.trim());
+        result[expectedIndex] = value;
+      }
+      expectedIndex++;
+    }
+    
+    // Convert to array if sequential
+    if (isSequential && Object.keys(result).length > 0) {
+      const arr = [];
+      for (let i = 0; i < Object.keys(result).length; i++) {
+        arr[i] = result[i];
+      }
+      return arr;
+    }
+    
+    return result;
+  };
+  
+  const splitPhpArrayItems = (code: string): string[] => {
+    const items: string[] = [];
+    let current = '';
+    let depth = 0;
+    let inString = false;
+    let stringChar = '';
+    
+    for (let i = 0; i < code.length; i++) {
+      const char = code[i];
+      const prev = i > 0 ? code[i - 1] : '';
+      
+      if (!inString) {
+        if (char === "'" || char === '"') {
+          inString = true;
+          stringChar = char;
+        } else if (char === '[' || char === '(') {
+          depth++;
+        } else if (char === ']' || char === ')') {
+          depth--;
+        } else if (char === ',' && depth === 0) {
+          items.push(current.trim());
+          current = '';
+          continue;
+        }
+      } else {
+        if (char === stringChar && prev !== '\\') {
+          inString = false;
+          stringChar = '';
+        }
+      }
+      
+      current += char;
+    }
+    
+    if (current.trim()) {
+      items.push(current.trim());
+    }
+    
+    return items;
+  };
+  
+  const findPhpArrowOperator = (code: string): number => {
+    let depth = 0;
+    let inString = false;
+    let stringChar = '';
+    
+    for (let i = 0; i < code.length - 1; i++) {
+      const char = code[i];
+      const next = code[i + 1];
+      const prev = i > 0 ? code[i - 1] : '';
+      
+      if (!inString) {
+        if (char === "'" || char === '"') {
+          inString = true;
+          stringChar = char;
+        } else if (char === '[' || char === '(') {
+          depth++;
+        } else if (char === ']' || char === ')') {
+          depth--;
+        } else if (char === '=' && next === '>' && depth === 0) {
+          return i;
+        }
+      } else {
+        if (char === stringChar && prev !== '\\') {
+          inString = false;
+          stringChar = '';
+        }
+      }
+    }
+    
+    return -1;
+  };
+  
+  // PHP Array/Object Syntax Generator
+  const generatePhpSyntax = (value: any, indent: number = 0): string => {
+    const spaces = '  '.repeat(indent);
+    
+    if (value === null) {
+      return 'null';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'true' : 'false';
+    }
+    if (typeof value === 'number') {
+      if (value === Infinity) {
+        return 'INF';
+      }
+      if (value === -Infinity) {
+        return '-INF';
+      }
+      if (Number.isNaN(value)) {
+        return 'NAN';
+      }
+      return value.toString();
+    }
+    if (typeof value === 'string') {
+      // Escape single quotes and backslashes
+      const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return `'${escaped}'`;
+    }
+    
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return '[]';
+      }
+      
+      const items = value.map((item, index) => {
+        const itemValue = generatePhpSyntax(item, indent + 1);
+        return `${spaces}  ${itemValue}`;
+      });
+      
+      return `[\n${items.join(',\n')}\n${spaces}]`;
+    }
+    
+    if (typeof value === 'object' && value !== null) {
+      const entries = Object.entries(value);
+      
+      if (entries.length === 0) {
+        return '[]';
+      }
+      
+      // Check if it's a PHP object
+      if (value.__class && typeof value.__class === 'string') {
+        const className = value.__class;
+        const props = entries.filter(([k]) => k !== '__class');
+        
+        if (props.length === 0) {
+          return `new ${className}([])`;
+        }
+        
+        const propItems = props.map(([key, val]) => {
+          const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? key : generatePhpSyntax(key);
+          const valueStr = generatePhpSyntax(val, indent + 1);
+          return `${spaces}  ${keyStr} => ${valueStr}`;
+        });
+        
+        return `new ${className}([\n${propItems.join(',\n')}\n${spaces}])`;
+      }
+      
+      // Regular associative array
+      const items = entries.map(([key, val]) => {
+        const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? `'${key}'` : generatePhpSyntax(key);
+        const valueStr = generatePhpSyntax(val, indent + 1);
+        return `${spaces}  ${keyStr} => ${valueStr}`;
+      });
+      
+      return `[\n${items.join(',\n')}\n${spaces}]`;
+    }
+    
+    throw new Error(`Unsupported type for PHP syntax: ${typeof value}`);
+  };
+
   const serializeValue = (value: any, resetRefs: boolean = false): string => {
     if (resetRefs) {
       referenceMap.clear();
@@ -273,12 +520,12 @@ const PhpSerializer = () => {
         setError('');
         return;
       }
-      const value = JSON.parse(input);
+      const value = parsePhpSyntax(input);
       const result = serializeValue(value, true); // Reset references
       setSerialized(result);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid input format');
+      setError(err instanceof Error ? err.message : 'Invalid PHP array/object syntax');
     }
   };
 
@@ -291,7 +538,7 @@ const PhpSerializer = () => {
         return;
       }
       const { value } = unserializeValue(input, true); // Reset references
-      setUnserialized(JSON.stringify(value, null, 2));
+      setUnserialized(generatePhpSyntax(value));
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid PHP serialized format');
@@ -314,36 +561,59 @@ const PhpSerializer = () => {
   };
 
   const swapContent = () => {
-    // Simply swap the content between the two panels
-    const tempSerialized = serialized;
-    const tempUnserialized = unserialized;
-    
-    setSerialized(tempUnserialized);
-    setUnserialized(tempSerialized);
-    setError('');
-  };
-
-  const formatJson = () => {
     try {
-      if (unserialized.trim()) {
-        const parsed = JSON.parse(unserialized);
-        setUnserialized(JSON.stringify(parsed, null, 2));
-        setError('');
+      const tempSerialized = serialized;
+      const tempUnserialized = unserialized;
+      
+      // Process the swapped content properly
+      if (tempUnserialized.trim()) {
+        // Left panel content (PHP array) goes to right panel (serialized)
+        const leftPanelValue = parsePhpSyntax(tempUnserialized);
+        const newSerialized = serializeValue(leftPanelValue, true);
+        setSerialized(newSerialized);
+      } else {
+        setSerialized('');
       }
+      
+      if (tempSerialized.trim()) {
+        // Right panel content (serialized) goes to left panel (PHP array)
+        const { value } = unserializeValue(tempSerialized, true);
+        const newUnserialized = generatePhpSyntax(value);
+        setUnserialized(newUnserialized);
+      } else {
+        setUnserialized('');
+      }
+      
+      setError('');
     } catch (err) {
-      setError('Invalid JSON format');
+      setError(err instanceof Error ? err.message : 'Error swapping content - check format validity');
     }
   };
 
-  const minifyJson = () => {
+  const formatPhp = () => {
     try {
       if (unserialized.trim()) {
-        const parsed = JSON.parse(unserialized);
-        setUnserialized(JSON.stringify(parsed));
+        const parsed = parsePhpSyntax(unserialized);
+        setUnserialized(generatePhpSyntax(parsed));
         setError('');
       }
     } catch (err) {
-      setError('Invalid JSON format');
+      setError('Invalid PHP array/object syntax');
+    }
+  };
+
+  const minifyPhp = () => {
+    try {
+      if (unserialized.trim()) {
+        const parsed = parsePhpSyntax(unserialized);
+        // Generate minified version by removing extra whitespace
+        const formatted = generatePhpSyntax(parsed);
+        const minified = formatted.replace(/\s+/g, ' ').replace(/\s*=>\s*/g, '=>').replace(/\s*,\s*/g, ',');
+        setUnserialized(minified);
+        setError('');
+      }
+    } catch (err) {
+      setError('Invalid PHP array/object syntax');
     }
   };
 
@@ -382,8 +652,8 @@ const PhpSerializer = () => {
       "utf8_test": "测试 café 🚀"
     };
     
-    const jsonString = JSON.stringify(sampleData, null, 2);
-    handleSerialize(jsonString);
+    const phpSyntax = generatePhpSyntax(sampleData);
+    handleSerialize(phpSyntax);
     setError('');
   };
 
@@ -426,30 +696,30 @@ const PhpSerializer = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-gray-700">
-              JSON/Object
+              PHP Array/Object
             </label>
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={formatJson}
+                onClick={formatPhp}
                 className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                title="Format JSON"
+                title="Format PHP syntax"
               >
                 Format
               </button>
               <button
                 type="button"
-                onClick={minifyJson}
+                onClick={minifyPhp}
                 className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-                title="Minify JSON"
+                title="Minify PHP syntax"
               >
                 Minify
               </button>
               <button
                 type="button"
-                onClick={() => copyToClipboard(unserialized, 'JSON')}
+                onClick={() => copyToClipboard(unserialized, 'PHP')}
                 className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                title="Copy JSON"
+                title="Copy PHP syntax"
               >
                 <Copy size={12} />
               </button>
@@ -459,7 +729,7 @@ const PhpSerializer = () => {
             value={unserialized}
             onChange={(e) => handleSerialize(e.target.value)}
             className="w-full h-[65vh] p-4 font-mono text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            placeholder='Enter JSON (e.g. {"foo": "bar", "numbers": [1, 2, 3], "nested": {"key": "value"}})'
+            placeholder="Enter PHP array syntax (e.g. ['foo' => 'bar', 'numbers' => [1, 2, 3], 'nested' => ['key' => 'value']])"
           />
         </div>
         
@@ -496,12 +766,13 @@ const PhpSerializer = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="text-sm font-medium text-blue-800 mb-2">Features & Supported Types:</h3>
         <div className="text-sm text-blue-700 space-y-1">
-          <p>• <strong>Bidirectional conversion:</strong> JSON ↔ PHP serialized format</p>
+          <p>• <strong>Bidirectional conversion:</strong> PHP array/object syntax ↔ PHP serialized format</p>
           <p>• <strong>Supported types:</strong> strings, integers, floats, booleans, null, arrays, objects, PHP objects</p>
           <p>• <strong>UTF-8 support:</strong> Correctly handles multi-byte characters with proper byte length</p>
-          <p>• <strong>Special values:</strong> Infinity, -Infinity, NaN support</p>
+          <p>• <strong>PHP syntax support:</strong> Both ['key' => 'value'] and array('key' => 'value') formats</p>
+          <p>• <strong>Special values:</strong> INF, -INF, NaN support</p>
           <p>• <strong>Reference tracking:</strong> Handles circular references and object sharing</p>
-          <p>• <strong>PHP objects:</strong> Supports PHP class serialization with __class property</p>
+          <p>• <strong>PHP objects:</strong> Supports PHP class serialization with new ClassName() syntax</p>
           <p>• <strong>Array detection:</strong> Automatically converts sequential arrays vs associative arrays</p>
           <p>• <strong>Error handling:</strong> Detailed error messages for invalid formats</p>
         </div>
@@ -511,16 +782,19 @@ const PhpSerializer = () => {
         <h3 className="text-sm font-medium text-gray-800 mb-2">Example Usage:</h3>
         <div className="text-sm text-gray-600 space-y-2">
           <div>
-            <strong>JSON Object:</strong> <code className="bg-white px-2 py-1 rounded">{"{"}"name": "John", "age": 30, "active": true{"}"}</code>
+            <strong>PHP Array:</strong> <code className="bg-white px-2 py-1 rounded">['name' => 'John', 'age' => 30, 'active' => true]</code>
           </div>
           <div>
-            <strong>PHP Array:</strong> <code className="bg-white px-2 py-1 rounded">a:3:{"{"}s:4:"name";s:4:"John";s:3:"age";i:30;s:6:"active";b:1;{"}"}</code>
+            <strong>Serialized:</strong> <code className="bg-white px-2 py-1 rounded">a:3:{"{"}s:4:"name";s:4:"John";s:3:"age";i:30;s:6:"active";b:1;{"}"}</code>
           </div>
           <div>
-            <strong>PHP Object:</strong> <code className="bg-white px-2 py-1 rounded">{"{"}"__class": "User", "id": 123{"}"} → O:4:"User":1:{"{"}s:2:"id";i:123;{"}"}</code>
+            <strong>PHP Object:</strong> <code className="bg-white px-2 py-1 rounded">new User(['id' => 123]) → O:4:"User":1:{"{"}s:2:"id";i:123;{"}"}</code>
           </div>
           <div>
-            <strong>Special Values:</strong> <code className="bg-white px-2 py-1 rounded">Infinity → d:INF;, NaN → d:NAN;</code>
+            <strong>Alternative syntax:</strong> <code className="bg-white px-2 py-1 rounded">array('key' => 'value') or ['key' => 'value']</code>
+          </div>
+          <div>
+            <strong>Special Values:</strong> <code className="bg-white px-2 py-1 rounded">INF, -INF, NAN → d:INF;, d:-INF;, d:NAN;</code>
           </div>
         </div>
       </div>
