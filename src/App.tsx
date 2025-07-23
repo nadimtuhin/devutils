@@ -7,6 +7,8 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import ThemeSwitcher from "./components/ThemeSwitcher";
 import {
   Clock,
   Code2,
@@ -48,27 +50,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   GripVertical,
-  PlayCircle,
-  Shield as ShieldIcon,
-  Moon,
-  Sun,
 } from "lucide-react";
-
-// ── theme ─────────────────────────────────────────────────────────────────────
-function useTheme() {
-  const [dark, setDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved) return saved === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("theme", dark ? "dark" : "light");
-  }, [dark]);
-
-  return { dark, toggle: () => setDark((d) => !d) };
-}
 import UnixTimeConverter from "./components/UnixTimeConverter";
 import JsonValidator from "./components/JsonValidator";
 import { Base64SideBySide } from "./components/Base64SideBySide";
@@ -84,7 +66,6 @@ import HtmlPreview from "./components/HtmlPreview";
 import TextDiff from "./components/TextDiff";
 import YamlToJson from "./components/YamlToJson";
 import YamlFormatter from "./components/YamlFormatter";
-import MakefileValidator from "./components/MakefileValidator";
 import NumberBaseConverter from "./components/NumberBaseConverter";
 import LoremIpsum from "./components/LoremIpsum";
 import JsonToCsv from "./components/JsonToCsv";
@@ -111,10 +92,6 @@ import HtmlMinifyBeautify from "./components/HtmlMinifyBeautify";
 import SpotlightSearch from "./components/SpotlightSearch";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import Credits from "./components/Credits";
-import WelcomeScreen from "./components/WelcomeScreen";
-import UserJourney from "./components/UserJourney";
-import Base64SecretDecoder from "./components/k8s/Base64SecretDecoder";
-import { OnboardingProvider, useOnboarding } from "./contexts/OnboardingContext";
 import {
   DndContext,
   closestCenter,
@@ -146,14 +123,11 @@ function SortableToolItem({
   tool,
   currentPath,
   isSidebarExpanded,
-  isDragActive,
 }: {
   tool: Tool;
   currentPath: string;
   isSidebarExpanded: boolean;
-  isDragActive: boolean;
 }) {
-  const isCredits = tool.id === "credits";
   const {
     attributes,
     listeners,
@@ -161,7 +135,9 @@ function SortableToolItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: tool.id, disabled: isCredits });
+  } = useSortable({ id: tool.id });
+
+  const [isDragStarted, setIsDragStarted] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -169,11 +145,18 @@ function SortableToolItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleMouseDown = () => {
+    setIsDragStarted(false);
+  };
+
+  const handleDragStart = () => {
+    setIsDragStarted(true);
+  };
+
   const handleClick = (e: React.MouseEvent) => {
-    // Prevent navigation if currently dragging
-    if (isDragActive || isDragging) {
+    // Prevent navigation if drag was initiated
+    if (isDragStarted) {
       e.preventDefault();
-      e.stopPropagation();
       return;
     }
   };
@@ -182,26 +165,28 @@ function SortableToolItem({
     <div
       ref={setNodeRef}
       style={style}
-      {...(!isCredits ? attributes : {})}
-      {...(!isCredits ? listeners : {})}
-      className={`group mb-1 relative ${!isCredits ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "z-50" : ""}`}
+      {...attributes}
+      {...listeners}
+      onMouseDown={handleMouseDown}
+      onDragStart={handleDragStart}
+      className={`group mb-1 relative cursor-grab active:cursor-grabbing ${isDragging ? "z-50" : ""}`}
     >
       <RouterLink
         to={tool.url}
         onClick={handleClick}
         className={`w-full flex items-center ${isSidebarExpanded ? "space-x-3 px-4" : "justify-center px-2"} py-3 rounded-lg transition-colors ${
           currentPath === tool.url
-            ? "bg-blue-50 text-blue-600"
-            : "text-gray-600 hover:bg-gray-50"
+            ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
         } no-underline`}
         title={!isSidebarExpanded ? tool.name : undefined}
       >
-        {isSidebarExpanded && !isCredits && (
+        {isSidebarExpanded && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripVertical size={16} className="text-gray-400" />
+            <GripVertical size={16} className="text-gray-400 dark:text-gray-500" />
           </div>
         )}
-        <div className={isSidebarExpanded && !isCredits ? "ml-5" : ""}>{tool.icon}</div>
+        <div className={isSidebarExpanded ? "ml-5" : ""}>{tool.icon}</div>
         {isSidebarExpanded && (
           <span className="text-sm font-medium">{tool.name}</span>
         )}
@@ -214,9 +199,6 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
-  const [isDragActive, setIsDragActive] = useState(false);
-  const { dark, toggle: toggleTheme } = useTheme();
-  const { state, startTour, hideWelcome, notifyDragComplete } = useOnboarding();
   const [tools, setTools] = useState<Tool[]>(() => {
     const savedOrder = localStorage.getItem("toolsOrder");
     if (savedOrder) {
@@ -231,27 +213,8 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
         (tool) => !orderIds.includes(tool.id)
       );
 
-      const allTools = [...orderedTools, ...newTools];
-      
-      // Ensure credits is always at the end
-      const creditsIndex = allTools.findIndex((tool) => tool.id === "credits");
-      if (creditsIndex !== -1 && creditsIndex !== allTools.length - 1) {
-        const creditsItem = allTools[creditsIndex];
-        const toolsWithoutCredits = allTools.filter((tool) => tool.id !== "credits");
-        return [...toolsWithoutCredits, creditsItem];
-      }
-      
-      return allTools;
+      return [...orderedTools, ...newTools];
     }
-    
-    // Ensure credits is at the end for initial load
-    const creditsIndex = defaultTools.findIndex((tool) => tool.id === "credits");
-    if (creditsIndex !== -1 && creditsIndex !== defaultTools.length - 1) {
-      const creditsItem = defaultTools[creditsIndex];
-      const toolsWithoutCredits = defaultTools.filter((tool) => tool.id !== "credits");
-      return [...toolsWithoutCredits, creditsItem];
-    }
-    
     return defaultTools;
   });
 
@@ -263,19 +226,16 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
       // Command/Control + K for spotlight
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsShortcutsOpen(false);
         setIsSpotlightOpen(true);
       }
       // Control + Shift + P for spotlight
       if (e.ctrlKey && e.shiftKey && e.key === "P") {
         e.preventDefault();
-        setIsShortcutsOpen(false);
         setIsSpotlightOpen(true);
       }
       // Command/Control + ? for shortcuts
       if ((e.metaKey || e.ctrlKey) && e.key === "?") {
         e.preventDefault();
-        setIsSpotlightOpen(false);
         setIsShortcutsOpen(true);
       }
     };
@@ -284,14 +244,6 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Close modals when tutorial step changes
-  useEffect(() => {
-    if (state.isTourActive) {
-      setIsSpotlightOpen(false);
-      setIsShortcutsOpen(false);
-    }
-  }, [state.currentTourStep, state.isTourActive]);
-
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -299,37 +251,15 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     })
   );
 
-  const handleDragStart = () => {
-    setIsDragActive(true);
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
-    // Set a timeout to reset drag state to allow click events to be properly handled
-    setTimeout(() => {
-      setIsDragActive(false);
-    }, 100);
-
-    // Notify tutorial system that a drag completed
-    if (over && active.id !== over.id) {
-      notifyDragComplete();
-    }
 
     if (over && active.id !== over.id) {
       const enabledTools = tools.filter((tool) => tool.isEnabled);
-      
-      // Exclude credits from reordering - it should always remain last
-      const enabledToolsWithoutCredits = enabledTools.filter((tool) => tool.id !== "credits");
-      const creditsItem = enabledTools.find((tool) => tool.id === "credits");
-      
-      const oldIndex = enabledToolsWithoutCredits.findIndex((tool) => tool.id === active.id);
-      const newIndex = enabledToolsWithoutCredits.findIndex((tool) => tool.id === over.id);
+      const oldIndex = enabledTools.findIndex((tool) => tool.id === active.id);
+      const newIndex = enabledTools.findIndex((tool) => tool.id === over.id);
 
-      const reorderedTools = arrayMove(enabledToolsWithoutCredits, oldIndex, newIndex);
-      
-      // Add credits back at the end if it exists
-      const reorderedEnabledTools = creditsItem ? [...reorderedTools, creditsItem] : reorderedTools;
+      const reorderedEnabledTools = arrayMove(enabledTools, oldIndex, newIndex);
 
       // Reconstruct the full tools array with disabled tools in their original positions
       const newTools = tools.map((tool) => {
@@ -349,85 +279,54 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     }
   };
 
-  const handleStartTour = () => {
-    startTour();
-  };
-
-  const handleSkipWelcome = () => {
-    hideWelcome();
-  };
-
-  if (!state.hasSeenWelcome) {
-    return <WelcomeScreen onGetStarted={handleStartTour} />;
-  }
-
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
       <div
-        className={`${isSidebarExpanded ? "w-64" : "w-16"} bg-white shadow-lg overflow-y-auto flex flex-col transition-all duration-200 ease-in-out sidebar`}
+        className={`${isSidebarExpanded ? "w-64" : "w-16"} bg-white dark:bg-gray-800 shadow-lg overflow-y-auto flex flex-col transition-all duration-200 ease-in-out`}
       >
-        <div className="p-4 border-b">
+        <div className="p-4 border-b dark:border-gray-700">
           <div className="flex justify-between items-center mb-3">
             {isSidebarExpanded ? (
               <RouterLink
                 to="/"
-                className="text-xl font-bold text-gray-800 no-underline"
+                className="text-xl font-bold text-gray-800 dark:text-gray-200 no-underline"
               >
                 DevUtils
               </RouterLink>
             ) : (
               <button
                 onClick={() => setIsSidebarExpanded(true)}
-                className="w-full flex justify-center hover:bg-gray-100 rounded p-1"
+                className="w-full flex justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1"
                 title="Expand Sidebar"
               >
-                <PanelLeft size={20} />
+                <PanelLeft size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
             )}
             <div className="flex space-x-2">
               {isSidebarExpanded && (
                 <>
                   <button
-                    onClick={() => {
-                      setIsShortcutsOpen(false);
-                      setIsSpotlightOpen(true);
-                    }}
-                    className="p-1.5 hover:bg-gray-100 rounded"
+                    onClick={() => setIsSpotlightOpen(true)}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     title="Search (⌘K)"
                   >
-                    <Search size={18} />
+                    <Search size={18} className="text-gray-600 dark:text-gray-400" />
                   </button>
                   <button
-                    onClick={() => {
-                      setIsSpotlightOpen(false);
-                      setIsShortcutsOpen(true);
-                    }}
-                    className="p-1.5 hover:bg-gray-100 rounded"
+                    onClick={() => setIsShortcutsOpen(true)}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     title="Keyboard Shortcuts (⌘?)"
                   >
-                    <Keyboard size={18} />
+                    <Keyboard size={18} className="text-gray-600 dark:text-gray-400" />
                   </button>
-                  <button
-                    onClick={handleStartTour}
-                    className="p-1.5 hover:bg-gray-100 rounded"
-                    title="Start Tutorial"
-                  >
-                    <PlayCircle size={18} />
-                  </button>
-                  <button
-                    onClick={toggleTheme}
-                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                    title={dark ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    {dark ? <Sun size={18} /> : <Moon size={18} />}
-                  </button>
+                  <ThemeSwitcher />
                   <button
                     onClick={() => setIsSidebarExpanded(false)}
-                    className="p-1.5 hover:bg-gray-100 rounded"
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     title="Collapse Sidebar"
                   >
-                    <PanelLeftClose size={18} />
+                    <PanelLeftClose size={18} className="text-gray-600 dark:text-gray-400" />
                   </button>
                 </>
               )}
@@ -439,7 +338,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                 href="https://github.com/nadimtuhin/devutils"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 hover:text-blue-600"
+                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Github size={16} />
                 <span>Repository</span>
@@ -448,7 +347,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                 href="https://github.com/nadimtuhin/devutils/stargazers"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 hover:text-blue-600"
+                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Star size={16} />
                 <span>Star</span>
@@ -460,7 +359,6 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -477,30 +375,15 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                     tool={tool}
                     currentPath={currentPath}
                     isSidebarExpanded={isSidebarExpanded}
-                    isDragActive={isDragActive}
                   />
                 ))}
             </SortableContext>
           </DndContext>
         </nav>
-        {isSidebarExpanded && (
-          <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
-            <div className="flex items-center justify-center">
-              <a
-                href="https://github.com/nadimtuhin/devutils"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-blue-600 no-underline"
-              >
-                v{__APP_VERSION__}
-              </a>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
         <div className="p-8">
           <Routes>
             <Route path="/" element={<Navigate to="/unix-time" replace />} />
@@ -512,7 +395,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                   tool.isEnabled ? (
                     tool.component
                   ) : (
-                    <div className="text-center text-gray-500 mt-8">
+                    <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                       This tool is currently disabled
                     </div>
                   )
@@ -535,14 +418,11 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
-
-      {/* User Journey Tutorial */}
-      <UserJourney />
     </div>
   );
 }
 
-function AppContent() {
+function App() {
   const tools: Tool[] = [
     {
       id: "cron-parser",
@@ -566,14 +446,6 @@ function AppContent() {
       icon: <FileCode size={20} />,
       component: <YamlFormatter />,
       url: "/yaml-formatter",
-      isEnabled: true,
-    },
-    {
-      id: "makefile-validator",
-      name: "Makefile Validator",
-      icon: <FileText size={20} />,
-      component: <MakefileValidator />,
-      url: "/makefile-validator",
       isEnabled: true,
     },
     {
@@ -857,14 +729,6 @@ function AppContent() {
       isEnabled: false,
     },
     {
-      id: "k8s-secret-decoder",
-      name: "K8s Secret Decoder",
-      icon: <ShieldIcon size={20} />,
-      component: <Base64SecretDecoder />,
-      url: "/k8s-secret-decoder",
-      isEnabled: true,
-    },
-    {
       id: "credits",
       name: "Credits & Repository",
       icon: <Info size={20} />,
@@ -875,17 +739,11 @@ function AppContent() {
   ];
 
   return (
-    <BrowserRouter>
-      <Layout tools={tools} />
-    </BrowserRouter>
-  );
-}
-
-function App() {
-  return (
-    <OnboardingProvider>
-      <AppContent />
-    </OnboardingProvider>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Layout tools={tools} />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
