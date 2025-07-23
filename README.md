@@ -251,4 +251,4 @@ Special thanks to all contributors and the open-source community for making this
   <strong>Built with ❤️ for developers, by developers</strong>
   <br/>
   <sub>Privacy-first • Open Source • Community Driven</sub>
-</div> 
+</div>
