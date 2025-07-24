@@ -7,6 +7,8 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import ThemeSwitcher from "./components/ThemeSwitcher";
 import {
   Clock,
   Code2,
@@ -174,14 +176,14 @@ function SortableToolItem({
         onClick={handleClick}
         className={`w-full flex items-center ${isSidebarExpanded ? "space-x-3 px-4" : "justify-center px-2"} py-3 rounded-lg transition-colors ${
           currentPath === tool.url
-            ? "bg-blue-50 text-blue-600"
-            : "text-gray-600 hover:bg-gray-50"
+            ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
         } no-underline`}
         title={!isSidebarExpanded ? tool.name : undefined}
       >
         {isSidebarExpanded && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripVertical size={16} className="text-gray-400" />
+            <GripVertical size={16} className="text-gray-400 dark:text-gray-500" />
           </div>
         )}
         <div className={isSidebarExpanded ? "ml-5" : ""}>{tool.icon}</div>
@@ -278,27 +280,27 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
       <div
-        className={`${isSidebarExpanded ? "w-64" : "w-16"} bg-white shadow-lg overflow-y-auto flex flex-col transition-all duration-200 ease-in-out`}
+        className={`${isSidebarExpanded ? "w-64" : "w-16"} bg-white dark:bg-gray-800 shadow-lg overflow-y-auto flex flex-col transition-all duration-200 ease-in-out`}
       >
-        <div className="p-4 border-b">
+        <div className="p-4 border-b dark:border-gray-700">
           <div className="flex justify-between items-center mb-3">
             {isSidebarExpanded ? (
               <RouterLink
                 to="/"
-                className="text-xl font-bold text-gray-800 no-underline"
+                className="text-xl font-bold text-gray-800 dark:text-gray-200 no-underline"
               >
                 DevUtils
               </RouterLink>
             ) : (
               <button
                 onClick={() => setIsSidebarExpanded(true)}
-                className="w-full flex justify-center hover:bg-gray-100 rounded p-1"
+                className="w-full flex justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1"
                 title="Expand Sidebar"
               >
-                <PanelLeft size={20} />
+                <PanelLeft size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
             )}
             <div className="flex space-x-2">
@@ -306,24 +308,25 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                 <>
                   <button
                     onClick={() => setIsSpotlightOpen(true)}
-                    className="p-1.5 hover:bg-gray-100 rounded"
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     title="Search (⌘K)"
                   >
-                    <Search size={18} />
+                    <Search size={18} className="text-gray-600 dark:text-gray-400" />
                   </button>
                   <button
                     onClick={() => setIsShortcutsOpen(true)}
-                    className="p-1.5 hover:bg-gray-100 rounded"
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     title="Keyboard Shortcuts (⌘?)"
                   >
-                    <Keyboard size={18} />
+                    <Keyboard size={18} className="text-gray-600 dark:text-gray-400" />
                   </button>
+                  <ThemeSwitcher />
                   <button
                     onClick={() => setIsSidebarExpanded(false)}
-                    className="p-1.5 hover:bg-gray-100 rounded"
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     title="Collapse Sidebar"
                   >
-                    <PanelLeftClose size={18} />
+                    <PanelLeftClose size={18} className="text-gray-600 dark:text-gray-400" />
                   </button>
                 </>
               )}
@@ -335,7 +338,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                 href="https://github.com/nadimtuhin/devutils"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 hover:text-blue-600"
+                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Github size={16} />
                 <span>Repository</span>
@@ -344,7 +347,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                 href="https://github.com/nadimtuhin/devutils/stargazers"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 hover:text-blue-600"
+                className="flex items-center space-x-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Star size={16} />
                 <span>Star</span>
@@ -380,7 +383,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
         <div className="p-8">
           <Routes>
             <Route path="/" element={<Navigate to="/unix-time" replace />} />
@@ -392,7 +395,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                   tool.isEnabled ? (
                     tool.component
                   ) : (
-                    <div className="text-center text-gray-500 mt-8">
+                    <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                       This tool is currently disabled
                     </div>
                   )
@@ -736,9 +739,11 @@ function App() {
   ];
 
   return (
-    <BrowserRouter>
-      <Layout tools={tools} />
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Layout tools={tools} />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

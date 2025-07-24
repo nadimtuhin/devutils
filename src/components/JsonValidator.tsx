@@ -289,18 +289,18 @@ export default function JsonValidator() {
 
   return (
     <div className="max-w-6xl">
-      <h2 className="text-2xl font-bold mb-6">JSON Validator & Formatter</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">JSON Validator & Formatter</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">Input JSON</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Input JSON</label>
             <div className="flex items-center space-x-2">
               <button
                 type="button"
                 onClick={() => loadSample('simple')}
-                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded flex items-center space-x-1"
+                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded flex items-center space-x-1 text-gray-700 dark:text-gray-300 transition-colors"
                 title="Load simple JSON sample"
               >
                 <FileText size={12} />
@@ -309,7 +309,7 @@ export default function JsonValidator() {
               <button
                 type="button"
                 onClick={() => loadSample('complex')}
-                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded flex items-center space-x-1"
+                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded flex items-center space-x-1 text-gray-700 dark:text-gray-300 transition-colors"
                 title="Load complex JSON sample"
               >
                 <FileText size={12} />
@@ -318,7 +318,7 @@ export default function JsonValidator() {
               <button
                 type="button"
                 onClick={() => loadSample('api')}
-                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded flex items-center space-x-1"
+                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded flex items-center space-x-1 text-gray-700 dark:text-gray-300 transition-colors"
                 title="Load API response sample"
               >
                 <FileText size={12} />
@@ -331,11 +331,11 @@ export default function JsonValidator() {
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="w-full h-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"
+              className="w-full h-96 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 font-mono text-sm resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Paste your JSON here or click a sample button above..."
             />
             {error && (
-              <div className="absolute bottom-2 left-2 right-2 bg-red-50 border border-red-200 rounded px-2 py-1 text-red-600 text-xs">
+              <div className="absolute bottom-2 left-2 right-2 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded px-2 py-1 text-red-600 dark:text-red-400 text-xs">
                 {error}
               </div>
             )}
@@ -345,7 +345,7 @@ export default function JsonValidator() {
         {/* Output Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {error ? 'Validation Error' : 'Formatted Output'}
             </label>
             <div className="flex items-center space-x-2">
@@ -354,7 +354,7 @@ export default function JsonValidator() {
                   <button
                     type="button"
                     onClick={() => setShowLineNumbers(!showLineNumbers)}
-                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded flex items-center space-x-1"
+                    className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded flex items-center space-x-1 text-gray-700 dark:text-gray-300 transition-colors"
                     title="Toggle line numbers"
                   >
                     {showLineNumbers ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -417,7 +417,7 @@ export default function JsonValidator() {
                 )}
               </div>
             ) : (
-              <div className="p-4 text-gray-500 h-full flex items-center justify-center">
+              <div className="p-4 text-gray-500 dark:text-gray-400 h-full flex items-center justify-center">
                 Enter JSON to validate and format
               </div>
             )}

@@ -158,10 +158,10 @@ export default function CertificateDecoder() {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-2xl font-bold mb-6">Certificate Decoder</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">Certificate Decoder</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Certificate Input</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Certificate Input</label>
           <CodeEditor
             value={input}
             language="text"
@@ -177,7 +177,7 @@ export default function CertificateDecoder() {
           />
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Decoded Output</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Decoded Output</label>
           <CodeEditor
             value={output}
             language="text"
