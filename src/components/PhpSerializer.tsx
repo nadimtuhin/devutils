@@ -416,11 +416,36 @@ const PhpSerializer = () => {
       if (colonPos === -1) throw new Error('Invalid string format');
       const lengthStr = input.slice(2, colonPos);
       if (!/^\d+$/.test(lengthStr)) throw new Error('Invalid string length');
-      const length = parseInt(lengthStr, 10);
+      const byteLength = parseInt(lengthStr, 10);
       
       if (input[colonPos + 1] !== '"') throw new Error('String must start with quote');
       const startPos = colonPos + 2;
-      const endPos = startPos + length;
+      
+      // Find the actual end position by counting bytes, not characters
+      // Since JavaScript strings are UTF-16, we need to convert to bytes and count
+      const remainingInput = input.slice(startPos);
+      const encoder = new TextEncoder();
+      let charIndex = 0;
+      let currentByteLength = 0;
+      
+      // Find where we reach the target byte length
+      while (currentByteLength < byteLength && charIndex < remainingInput.length) {
+        const char = remainingInput[charIndex];
+        const charBytes = encoder.encode(char).length;
+        if (currentByteLength + charBytes <= byteLength) {
+          currentByteLength += charBytes;
+          charIndex++;
+        } else {
+          break;
+        }
+      }
+      
+      // Check if we have the exact byte length
+      if (currentByteLength !== byteLength) {
+        throw new Error('String byte length mismatch');
+      }
+      
+      const endPos = startPos + charIndex;
       
       if (input.length < endPos + 2) throw new Error('String too short');
       if (input[endPos] !== '"' || input[endPos + 1] !== ';') {
