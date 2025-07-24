@@ -729,7 +729,7 @@ const PhpSerializer = () => {
             value={unserialized}
             onChange={(e) => handleSerialize(e.target.value)}
             className="w-full h-[65vh] p-4 font-mono text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            placeholder="Enter PHP array syntax (e.g. ['foo' => 'bar', 'numbers' => [1, 2, 3], 'nested' => ['key' => 'value']])"
+            placeholder="Enter PHP array syntax (e.g. ['foo' =&gt; 'bar', 'numbers' =&gt; [1, 2, 3], 'nested' =&gt; ['key' =&gt; 'value']])"
           />
         </div>
         
@@ -769,7 +769,7 @@ const PhpSerializer = () => {
           <p>• <strong>Bidirectional conversion:</strong> PHP array/object syntax ↔ PHP serialized format</p>
           <p>• <strong>Supported types:</strong> strings, integers, floats, booleans, null, arrays, objects, PHP objects</p>
           <p>• <strong>UTF-8 support:</strong> Correctly handles multi-byte characters with proper byte length</p>
-          <p>• <strong>PHP syntax support:</strong> Both ['key' => 'value'] and array('key' => 'value') formats</p>
+          <p>• <strong>PHP syntax support:</strong> Both ['key' =&gt; 'value'] and array('key' =&gt; 'value') formats</p>
           <p>• <strong>Special values:</strong> INF, -INF, NaN support</p>
           <p>• <strong>Reference tracking:</strong> Handles circular references and object sharing</p>
           <p>• <strong>PHP objects:</strong> Supports PHP class serialization with new ClassName() syntax</p>
@@ -782,16 +782,16 @@ const PhpSerializer = () => {
         <h3 className="text-sm font-medium text-gray-800 mb-2">Example Usage:</h3>
         <div className="text-sm text-gray-600 space-y-2">
           <div>
-            <strong>PHP Array:</strong> <code className="bg-white px-2 py-1 rounded">['name' => 'John', 'age' => 30, 'active' => true]</code>
+            <strong>PHP Array:</strong> <code className="bg-white px-2 py-1 rounded">['name' =&gt; 'John', 'age' =&gt; 30, 'active' =&gt; true]</code>
           </div>
           <div>
             <strong>Serialized:</strong> <code className="bg-white px-2 py-1 rounded">a:3:{"{"}s:4:"name";s:4:"John";s:3:"age";i:30;s:6:"active";b:1;{"}"}</code>
           </div>
           <div>
-            <strong>PHP Object:</strong> <code className="bg-white px-2 py-1 rounded">new User(['id' => 123]) → O:4:"User":1:{"{"}s:2:"id";i:123;{"}"}</code>
+            <strong>PHP Object:</strong> <code className="bg-white px-2 py-1 rounded">new User(['id' =&gt; 123]) → O:4:"User":1:{"{"}s:2:"id";i:123;{"}"}</code>
           </div>
           <div>
-            <strong>Alternative syntax:</strong> <code className="bg-white px-2 py-1 rounded">array('key' => 'value') or ['key' => 'value']</code>
+            <strong>Alternative syntax:</strong> <code className="bg-white px-2 py-1 rounded">array('key' =&gt; 'value') or ['key' =&gt; 'value']</code>
           </div>
           <div>
             <strong>Special Values:</strong> <code className="bg-white px-2 py-1 rounded">INF, -INF, NAN → d:INF;, d:-INF;, d:NAN;</code>
