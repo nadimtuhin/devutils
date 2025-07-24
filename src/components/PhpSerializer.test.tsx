@@ -482,5 +482,32 @@ describe('PhpSerializer', () => {
       expect(phpOutput.value).toContain('s:2:"id";i:123');
       expect(phpOutput.value).toContain('s:4:"name";s:8:"John Doe"');
     });
+
+    test('handles UTF-8 strings in complex serialized data without "String too short" error', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      // The exact serialized string that was causing the "String too short" error
+      const problematicSerializedString = `a:5:{s:4:"user";O:4:"User":1:{s:1:"0";a:8:{s:2:"id";i:123;s:4:"name";s:8:"John Doe";s:5:"email";s:16:"john@example.com";s:6:"active";b:1;s:7:"balance";d:99.99;s:11:"preferences";N;s:4:"tags";a:2:{i:0;s:9:"developer";i:1;s:5:"admin";}s:8:"metadata";a:3:{s:10:"created_at";s:10:"2024-01-15";s:10:"last_login";s:10:"2024-07-16";s:11:"login_count";i:42;}}}s:8:"settings";a:3:{s:5:"theme";s:4:"dark";s:13:"notifications";b:1;s:8:"language";s:5:"en-US";}s:5:"items";a:3:{i:0;s:5:"item1";i:1;s:5:"item2";i:2;s:5:"item3";}s:15:"special_numbers";a:3:{s:8:"infinity";d:INF;s:17:"negative_infinity";d:-INF;s:12:"not_a_number";d:NAN;}s:9:"utf8_test";s:17:"测试 café 🚀";}`;
+      
+      // This should not throw "String too short" error anymore
+      fireEvent.change(phpOutput, { target: { value: problematicSerializedString } });
+      
+      // Verify no error is displayed
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/String too short/)).not.toBeInTheDocument();
+      
+      // Verify the UTF-8 string is correctly parsed
+      expect(phpInput.value).toContain("'utf8_test' => '测试 café 🚀'");
+      
+      // Verify other complex elements are parsed correctly
+      expect(phpInput.value).toContain('new User([');
+      expect(phpInput.value).toContain("'name' => 'John Doe'");
+      expect(phpInput.value).toContain("'email' => 'john@example.com'");
+      expect(phpInput.value).toContain("'special_numbers' => [");
+      expect(phpInput.value).toContain("'infinity' => INF");
+      expect(phpInput.value).toContain("'negative_infinity' => -INF");
+      expect(phpInput.value).toContain("'not_a_number' => NAN");
+    });
   });
 });
