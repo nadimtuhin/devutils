@@ -34,9 +34,9 @@ export default function Base64ImageEncoder() {
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 transition-colors"
           />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
         </div>
         
         {imageBase64 && (
@@ -46,7 +46,7 @@ export default function Base64ImageEncoder() {
               <img
                 src={imageBase64}
                 alt="Preview"
-                className="max-w-full h-auto border rounded-md"
+                className="max-w-full h-auto border border-gray-300 dark:border-gray-600 rounded-md"
               />
             </div>
             <div className="space-y-2">
@@ -54,7 +54,7 @@ export default function Base64ImageEncoder() {
               <textarea
                 value={imageBase64}
                 readOnly
-                className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 font-mono text-sm"
+                className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-gray-50 dark:bg-gray-700 font-mono text-sm text-gray-900 dark:text-gray-100"
               />
             </div>
           </>

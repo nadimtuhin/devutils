@@ -52,7 +52,7 @@ export default function NumberBaseConverter() {
               type="text"
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Enter a number..."
             />
             <select
@@ -61,7 +61,7 @@ export default function NumberBaseConverter() {
                 setFromBase(Number(e.target.value));
                 setError('');
               }}
-              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             >
               {bases.map((base) => (
                 <option key={base.value} value={base.value}>
@@ -70,7 +70,7 @@ export default function NumberBaseConverter() {
               ))}
             </select>
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4">
           {bases.map((base) => (
@@ -80,7 +80,7 @@ export default function NumberBaseConverter() {
                 type="text"
                 value={base.value === fromBase ? input : convert(base.value)}
                 readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 font-mono"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-gray-50 dark:bg-gray-700 font-mono text-gray-900 dark:text-gray-100"
               />
             </div>
           ))}
