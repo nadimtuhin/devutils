@@ -33,6 +33,10 @@ const KeyboardShortcuts: React.FC<Props> = ({ isOpen, onClose }) => {
               <kbd className="px-2 py-1 bg-gray-100 rounded">⌘ ?</kbd>
             </div>
             <div className="flex justify-between items-center">
+              <span>Show Guided Tour</span>
+              <kbd className="px-2 py-1 bg-gray-100 rounded">⌘ ⇧ ?</kbd>
+            </div>
+            <div className="flex justify-between items-center">
               <span>Navigate Tools</span>
               <kbd className="px-2 py-1 bg-gray-100 rounded">↑/↓</kbd>
             </div>
