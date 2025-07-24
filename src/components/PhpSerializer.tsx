@@ -247,6 +247,22 @@ const PhpSerializer = () => {
           return `new ${className}([])`;
         }
         
+        // Special case: if object has single property with numeric string key containing an object/array,
+        // this might be a PHP object that was serialized with all properties under one key (unusual but valid)
+        if (props.length === 1) {
+          const [singleKey, singleValue] = props[0];
+          if (/^\d+$/.test(singleKey) && typeof singleValue === 'object' && singleValue !== null && !Array.isArray(singleValue)) {
+            // Flatten the nested object properties to the object level
+            const nestedEntries = Object.entries(singleValue);
+            const flattenedItems = nestedEntries.map(([key, val]) => {
+              const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? `'${key}'` : generatePhpSyntax(key);
+              const valueStr = generatePhpSyntax(val, indent + 1);
+              return `${spaces}  ${keyStr} => ${valueStr}`;
+            });
+            return `new ${className}([\n${flattenedItems.join(',\n')}\n${spaces}])`;
+          }
+        }
+        
         const propItems = props.map(([key, val]) => {
           const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? key : generatePhpSyntax(key);
           const valueStr = generatePhpSyntax(val, indent + 1);

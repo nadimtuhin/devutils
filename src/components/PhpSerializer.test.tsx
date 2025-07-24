@@ -426,4 +426,61 @@ describe('PhpSerializer', () => {
       expect(screen.getByText('PHP Serializer/Unserializer')).toBeInTheDocument();
     });
   });
+
+  describe('Complex Nested Structures', () => {
+    test('handles PHP objects with nested properties under numeric keys', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      // Test the specific case reported by user: object with properties nested under key "0"
+      const complexSerializedString = `a:5:{s:4:"user";O:4:"User":1:{s:1:"0";a:8:{s:2:"id";i:123;s:4:"name";s:8:"John Doe";s:5:"email";s:16:"john@example.com";s:6:"active";b:1;s:7:"balance";d:99.99;s:11:"preferences";N;s:4:"tags";a:2:{i:0;s:9:"developer";i:1;s:5:"admin";}s:8:"metadata";a:3:{s:10:"created_at";s:10:"2024-01-15";s:10:"last_login";s:10:"2024-07-16";s:11:"login_count";i:42;}}}s:8:"settings";a:3:{s:5:"theme";s:4:"dark";s:13:"notifications";b:1;s:8:"language";s:5:"en-US";}s:5:"items";a:3:{i:0;s:5:"item1";i:1;s:5:"item2";i:2;s:5:"item3";}s:15:"special_numbers";a:3:{s:8:"infinity";d:INF;s:17:"negative_infinity";d:-INF;s:12:"not_a_number";d:NAN;}s:9:"utf8_test";s:17:"测试 café 🚀";}`;
+      
+      // Input the serialized string into right panel
+      fireEvent.change(phpOutput, { target: { value: complexSerializedString } });
+      
+      // Should not show an error
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should convert to proper PHP array syntax in left panel
+      expect(phpInput.value).toContain('new User([');
+      expect(phpInput.value).toContain("'id' => 123");
+      expect(phpInput.value).toContain("'name' => 'John Doe'");
+      expect(phpInput.value).toContain("'email' => 'john@example.com'");
+      expect(phpInput.value).toContain("'active' => true");
+      expect(phpInput.value).toContain("'balance' => 99.99");
+      expect(phpInput.value).toContain("'preferences' => null");
+      expect(phpInput.value).toContain("'settings' => [");
+      expect(phpInput.value).toContain("'theme' => 'dark'");
+      expect(phpInput.value).toContain("'special_numbers' => [");
+      expect(phpInput.value).toContain("'infinity' => INF");
+      expect(phpInput.value).toContain("'negative_infinity' => -INF");
+      expect(phpInput.value).toContain("'not_a_number' => NAN");
+      expect(phpInput.value).toContain("'utf8_test' => '测试 café 🚀'");
+    });
+
+    test('bidirectional conversion works with complex nested structures', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      // Test that we can go from serialized -> PHP syntax -> serialized and get consistent results
+      const complexSerializedString = `a:2:{s:4:"user";O:4:"User":1:{s:1:"0";a:3:{s:2:"id";i:123;s:4:"name";s:8:"John Doe";s:5:"tags";a:2:{i:0;s:9:"developer";i:1;s:5:"admin";}}}s:8:"settings";a:2:{s:5:"theme";s:4:"dark";s:8:"language";s:5:"en-US";}}`;
+      
+      // Step 1: Input serialized string -> should generate PHP syntax
+      fireEvent.change(phpOutput, { target: { value: complexSerializedString } });
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      const generatedPhpSyntax = phpInput.value;
+      expect(generatedPhpSyntax).toContain('new User([');
+      
+      // Step 2: Clear and input the generated PHP syntax -> should generate serialized string
+      fireEvent.change(phpOutput, { target: { value: '' } });
+      fireEvent.change(phpInput, { target: { value: generatedPhpSyntax } });
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should contain the essential serialized parts
+      expect(phpOutput.value).toContain('O:4:"User"');
+      expect(phpOutput.value).toContain('s:2:"id";i:123');
+      expect(phpOutput.value).toContain('s:4:"name";s:8:"John Doe"');
+    });
+  });
 });
