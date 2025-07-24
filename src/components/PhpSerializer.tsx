@@ -618,42 +618,40 @@ const PhpSerializer = () => {
   };
 
   const loadSample = () => {
-    const sampleData = {
-      "user": {
-        "__class": "User",
-        "id": 123,
-        "name": "John Doe",
-        "email": "john@example.com",
-        "active": true,
-        "balance": 99.99,
-        "preferences": null,
-        "tags": ["developer", "admin"],
-        "metadata": {
-          "created_at": "2024-01-15",
-          "last_login": "2024-07-16",
-          "login_count": 42
-        }
-      },
-      "settings": {
-        "theme": "dark",
-        "notifications": true,
-        "language": "en-US"
-      },
-      "items": [
-        "item1",
-        "item2", 
-        "item3"
-      ],
-      "special_numbers": {
-        "infinity": Infinity,
-        "negative_infinity": -Infinity,
-        "not_a_number": NaN
-      },
-      "utf8_test": "测试 café 🚀"
-    };
+    const phpSampleData = `[
+  'user' => new User([
+    'id' => 123,
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'active' => true,
+    'balance' => 99.99,
+    'preferences' => null,
+    'tags' => ['developer', 'admin'],
+    'metadata' => [
+      'created_at' => '2024-01-15',
+      'last_login' => '2024-07-16',
+      'login_count' => 42
+    ]
+  ]),
+  'settings' => [
+    'theme' => 'dark',
+    'notifications' => true,
+    'language' => 'en-US'
+  ],
+  'items' => [
+    'item1',
+    'item2',
+    'item3'
+  ],
+  'special_numbers' => [
+    'infinity' => INF,
+    'negative_infinity' => -INF,
+    'not_a_number' => NAN
+  ],
+  'utf8_test' => '测试 café 🚀'
+]`;
     
-    const phpSyntax = generatePhpSyntax(sampleData);
-    handleSerialize(phpSyntax);
+    handleSerialize(phpSampleData);
     setError('');
   };
 
