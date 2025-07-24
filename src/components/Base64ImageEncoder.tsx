@@ -26,10 +26,10 @@ export default function Base64ImageEncoder() {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6">Base64 Image Encoder</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">Base64 Image Encoder</h2>
       <div className="space-y-6">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Select Image</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Image</label>
           <input
             type="file"
             accept="image/*"
@@ -42,7 +42,7 @@ export default function Base64ImageEncoder() {
         {imageBase64 && (
           <>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Preview</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Preview</label>
               <img
                 src={imageBase64}
                 alt="Preview"
@@ -50,7 +50,7 @@ export default function Base64ImageEncoder() {
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Base64 Output</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Base64 Output</label>
               <textarea
                 value={imageBase64}
                 readOnly

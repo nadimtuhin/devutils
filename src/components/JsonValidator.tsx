@@ -289,13 +289,13 @@ export default function JsonValidator() {
 
   return (
     <div className="max-w-6xl">
-      <h2 className="text-2xl font-bold mb-6">JSON Validator & Formatter</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">JSON Validator & Formatter</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">Input JSON</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Input JSON</label>
             <div className="flex items-center space-x-2">
               <button
                 type="button"
@@ -345,7 +345,7 @@ export default function JsonValidator() {
         {/* Output Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {error ? 'Validation Error' : 'Formatted Output'}
             </label>
             <div className="flex items-center space-x-2">
@@ -417,7 +417,7 @@ export default function JsonValidator() {
                 )}
               </div>
             ) : (
-              <div className="p-4 text-gray-500 h-full flex items-center justify-center">
+              <div className="p-4 text-gray-500 dark:text-gray-400 h-full flex items-center justify-center">
                 Enter JSON to validate and format
               </div>
             )}

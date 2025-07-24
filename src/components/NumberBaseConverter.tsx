@@ -43,10 +43,10 @@ export default function NumberBaseConverter() {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6">Number Base Converter</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">Number Base Converter</h2>
       <div className="space-y-6">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Input Number</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Input Number</label>
           <div className="flex space-x-4">
             <input
               type="text"
@@ -75,7 +75,7 @@ export default function NumberBaseConverter() {
         <div className="grid grid-cols-2 gap-4">
           {bases.map((base) => (
             <div key={base.value} className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">{base.name}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{base.name}</label>
               <input
                 type="text"
                 value={base.value === fromBase ? input : convert(base.value)}

@@ -27,11 +27,11 @@ export default function RegexpTester() {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-2xl font-bold mb-6">RegExp Tester</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">RegExp Tester</h2>
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Pattern</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pattern</label>
             <input
               type="text"
               value={pattern}
@@ -41,7 +41,7 @@ export default function RegexpTester() {
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Flags</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Flags</label>
             <input
               type="text"
               value={flags}
@@ -53,7 +53,7 @@ export default function RegexpTester() {
         </div>
         
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Test String</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Test String</label>
           <textarea
             value={testString}
             onChange={(e) => setTestString(e.target.value)}
@@ -72,7 +72,7 @@ export default function RegexpTester() {
         {error && <p className="text-red-500">{error}</p>}
 
         <div className="space-y-2">
-          <h3 className="text-lg font-medium text-gray-900">Matches ({matches.length})</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Matches ({matches.length})</h3>
           {matches.length > 0 ? (
             <ul className="space-y-2">
               {matches.map((match, index) => (
@@ -85,7 +85,7 @@ export default function RegexpTester() {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">No matches found</p>
+            <p className="text-gray-500 dark:text-gray-400">No matches found</p>
           )}
         </div>
       </div>
