@@ -43,7 +43,7 @@ export default function BackslashEncoder() {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6">Backslash Encoder</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">Backslash Encoder</h2>
       <div className="space-y-6">
         <div className="flex space-x-4">
           <button
@@ -68,7 +68,7 @@ export default function BackslashEncoder() {
           </button>
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Input</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Input</label>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -83,7 +83,7 @@ export default function BackslashEncoder() {
           Convert
         </button>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Output</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Output</label>
           <textarea
             value={output}
             readOnly

@@ -27,11 +27,11 @@ export default function LoremIpsum() {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6">Lorem Ipsum Generator</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">Lorem Ipsum Generator</h2>
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Number of Paragraphs
             </label>
             <input
@@ -44,7 +44,7 @@ export default function LoremIpsum() {
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Words per Paragraph
             </label>
             <input
@@ -64,7 +64,7 @@ export default function LoremIpsum() {
           Generate
         </button>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Generated Text</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Generated Text</label>
           <textarea
             value={output}
             readOnly

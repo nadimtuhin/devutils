@@ -52,7 +52,7 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       )}
       <div className="relative flex">
         <textarea
@@ -80,7 +80,7 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
           {copyStatus === 'success' ? 'Copied!' : copyStatus === 'error' ? 'Failed' : 'Copy'}
         </button>
       </div>
-      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
+      {error && <div className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</div>}
     </div>
   );
 }; 

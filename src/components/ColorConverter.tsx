@@ -41,12 +41,12 @@ const ColorConverter = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Color Converter</h1>
+      <h1 className="text-2xl font-bold dark:text-white">Color Converter</h1>
       
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Color Input
             </label>
             <input
@@ -93,7 +93,7 @@ const ColorConverter = () => {
         <div className="space-y-4">
           {Object.entries(formats).map(([format, value]) => (
             <div key={format} className="p-4 border rounded-lg">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {format.toUpperCase()}
               </label>
               <input

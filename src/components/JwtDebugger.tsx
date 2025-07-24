@@ -34,10 +34,10 @@ export default function JwtDebugger() {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-2xl font-bold mb-6">JWT Debugger</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">JWT Debugger</h2>
       <div className="space-y-6">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">JWT Token</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">JWT Token</label>
           <textarea
             value={jwt}
             onChange={(e) => setJwt(e.target.value)}
@@ -57,19 +57,19 @@ export default function JwtDebugger() {
         {decoded && (
           <div className="space-y-6">
             <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900">Header</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Header</h3>
               <pre className="w-full p-4 bg-gray-50 rounded-md overflow-auto">
                 {JSON.stringify(decoded.header, null, 2)}
               </pre>
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900">Payload</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Payload</h3>
               <pre className="w-full p-4 bg-gray-50 rounded-md overflow-auto">
                 {JSON.stringify(decoded.payload, null, 2)}
               </pre>
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900">Signature</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Signature</h3>
               <pre className="w-full p-4 bg-gray-50 rounded-md overflow-auto">
                 {decoded.signature}
               </pre>

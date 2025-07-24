@@ -19,7 +19,7 @@ export default function Base64Encoder() {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6">Base64 Encoder/Decoder</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">Base64 Encoder/Decoder</h2>
       <div className="space-y-6">
         <div className="flex space-x-4">
           <button
@@ -44,7 +44,7 @@ export default function Base64Encoder() {
           </button>
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Input</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Input</label>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -59,7 +59,7 @@ export default function Base64Encoder() {
           Convert
         </button>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Output</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Output</label>
           <textarea
             value={output}
             readOnly

@@ -83,7 +83,7 @@ export default function HtmlMinifyBeautify() {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-2xl font-bold mb-6">HTML Minify/Beautify</h2>
+      <h2 className="text-2xl font-bold dark:text-white mb-6">HTML Minify/Beautify</h2>
       
       <div className="mb-4 space-x-4">
         <label className="inline-flex items-center">
@@ -110,7 +110,7 @@ export default function HtmlMinifyBeautify() {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">HTML Input</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">HTML Input</label>
           <CodeEditor
             value={html}
             language="html"
@@ -125,7 +125,7 @@ export default function HtmlMinifyBeautify() {
           />
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {mode === 'minify' ? 'Minified Output' : 'Beautified Output'}
           </label>
           <CodeEditor

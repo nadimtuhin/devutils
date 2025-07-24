@@ -23,7 +23,7 @@ const StringCaseConverter = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">String Case Converter</h1>
+      <h1 className="text-2xl font-bold dark:text-white">String Case Converter</h1>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <textarea
@@ -35,7 +35,7 @@ const StringCaseConverter = () => {
         </div>
         <div className="space-y-4">
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">camelCase</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">camelCase</label>
             <input
               type="text"
               readOnly
@@ -44,7 +44,7 @@ const StringCaseConverter = () => {
             />
           </div>
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">PascalCase</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">PascalCase</label>
             <input
               type="text"
               readOnly
@@ -53,7 +53,7 @@ const StringCaseConverter = () => {
             />
           </div>
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">snake_case</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">snake_case</label>
             <input
               type="text"
               readOnly
@@ -62,7 +62,7 @@ const StringCaseConverter = () => {
             />
           </div>
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">kebab-case</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">kebab-case</label>
             <input
               type="text"
               readOnly
@@ -71,7 +71,7 @@ const StringCaseConverter = () => {
             />
           </div>
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">Title Case</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title Case</label>
             <input
               type="text"
               readOnly
@@ -80,7 +80,7 @@ const StringCaseConverter = () => {
             />
           </div>
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">UPPER CASE</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">UPPER CASE</label>
             <input
               type="text"
               readOnly
@@ -89,7 +89,7 @@ const StringCaseConverter = () => {
             />
           </div>
           <div className="p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">lower case</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">lower case</label>
             <input
               type="text"
               readOnly
