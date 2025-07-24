@@ -64,11 +64,75 @@ describe('PhpSerializer', () => {
   });
 
   describe('Special Float Values', () => {
-    test('handles Infinity correctly', () => {
-      const jsonInput = screen.getAllByRole('textbox')[0];
+    test('handles INF constant correctly in PHP syntax', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
       const phpOutput = screen.getAllByRole('textbox')[1];
       
-      // Note: JSON.parse can't handle raw Infinity, but our sample data includes it
+      fireEvent.change(phpInput, { target: { value: 'INF' } });
+      expect(phpOutput.value).toBe('d:INF;');
+    });
+
+    test('handles -INF constant correctly in PHP syntax', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      fireEvent.change(phpInput, { target: { value: '-INF' } });
+      expect(phpOutput.value).toBe('d:-INF;');
+    });
+
+    test('handles NAN constant correctly in PHP syntax', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      fireEvent.change(phpInput, { target: { value: 'NAN' } });
+      expect(phpOutput.value).toBe('d:NAN;');
+    });
+
+    test('handles special float values in PHP arrays', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      const testArray = `[
+    'infinity' => INF,
+    'negative_infinity' => -INF,
+    'not_a_number' => NAN
+]`;
+      
+      fireEvent.change(phpInput, { target: { value: testArray } });
+      
+      // Should not show an error
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should contain all special float values in serialized output
+      expect(phpOutput.value).toContain('d:INF;');
+      expect(phpOutput.value).toContain('d:-INF;');
+      expect(phpOutput.value).toContain('d:NAN;');
+      expect(phpOutput.value).toContain('s:8:"infinity"');
+      expect(phpOutput.value).toContain('s:17:"negative_infinity"');
+      expect(phpOutput.value).toContain('s:13:"not_a_number"');
+    });
+
+    test('bidirectional conversion of special float values', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      // Test serialization
+      const testArray = "['test' => INF]";
+      fireEvent.change(phpInput, { target: { value: testArray } });
+      const serialized = phpOutput.value;
+      expect(serialized).toContain('d:INF;');
+      
+      // Test unserialization by putting serialized data into right panel
+      fireEvent.change(phpOutput, { target: { value: serialized } });
+      expect(phpInput.value).toContain('INF');
+      expect(phpInput.value).toContain("'test' => INF");
+    });
+
+    test('handles Infinity correctly via sample data', () => {
+      const phpInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      // Note: This tests the sample data functionality
       const sampleButton = screen.getByText('Load Sample');
       fireEvent.click(sampleButton);
       

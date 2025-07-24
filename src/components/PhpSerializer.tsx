@@ -35,6 +35,17 @@ const PhpSerializer = () => {
       return parseFloat(code);
     }
     
+    // Handle special float constants
+    if (code === 'INF') {
+      return Infinity;
+    }
+    if (code === '-INF') {
+      return -Infinity;
+    }
+    if (code === 'NAN') {
+      return NaN;
+    }
+    
     // Handle strings
     if ((code.startsWith("'") && code.endsWith("'")) || (code.startsWith('"') && code.endsWith('"'))) {
       return code.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, '\\').replace(/\\"/g, '"');
