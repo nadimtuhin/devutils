@@ -267,6 +267,87 @@ describe('PhpSerializer', () => {
     });
   });
 
+  describe('PHP Object Syntax Parsing', () => {
+    test('parses multiline PHP object syntax correctly', () => {
+      const jsonInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      // Test the specific multiline PHP syntax that was causing issues
+      const multilinePhpSyntax = `[
+  'user' => new User([
+    'metadata' => [
+      'created_at' => '2024-01-15',
+      'last_login' => '2024-07-16'
+    ]
+  ])
+]`;
+
+      fireEvent.change(jsonInput, { target: { value: multilinePhpSyntax } });
+      
+      // Should not show an error
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should produce valid PHP serialized output
+      expect(phpOutput.value).not.toBe('');
+      expect(phpOutput.value).toContain('O:4:"User"'); // Should contain User object
+      expect(phpOutput.value).toContain('s:8:"metadata"'); // Should contain metadata key
+      expect(phpOutput.value).toContain('s:10:"created_at"'); // Should contain created_at
+      expect(phpOutput.value).toContain('s:10:"last_login"'); // Should contain last_login
+    });
+
+    test('parses single-line PHP object syntax correctly', () => {
+      const jsonInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      const singleLinePhpSyntax = "['user' => new User(['metadata' => ['created_at' => '2024-01-15', 'last_login' => '2024-07-16']])]";
+
+      fireEvent.change(jsonInput, { target: { value: singleLinePhpSyntax } });
+      
+      // Should not show an error
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should produce valid PHP serialized output
+      expect(phpOutput.value).not.toBe('');
+      expect(phpOutput.value).toContain('O:4:"User"');
+    });
+
+    test('parses empty PHP object correctly', () => {
+      const jsonInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      fireEvent.change(jsonInput, { target: { value: 'new User([])' } });
+      
+      // Should not show an error
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should produce valid PHP serialized output with empty object
+      expect(phpOutput.value).toBe('O:4:"User":0:{}');
+    });
+
+    test('handles nested PHP objects correctly', () => {
+      const jsonInput = screen.getAllByRole('textbox')[0];
+      const phpOutput = screen.getAllByRole('textbox')[1];
+      
+      const nestedObjectSyntax = `[
+  'user' => new User([
+    'profile' => new Profile([
+      'name' => 'John Doe'
+    ])
+  ])
+]`;
+
+      fireEvent.change(jsonInput, { target: { value: nestedObjectSyntax } });
+      
+      // Should not show an error
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+      
+      // Should contain both User and Profile objects
+      expect(phpOutput.value).toContain('O:4:"User"');
+      expect(phpOutput.value).toContain('O:7:"Profile"');
+      expect(phpOutput.value).toContain('s:4:"name"');
+    });
+  });
+
   describe('Circular Reference Handling', () => {
     test('handles circular references without infinite loops', () => {
       // This test would need to be done programmatically since JSON.stringify

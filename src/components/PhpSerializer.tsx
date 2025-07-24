@@ -51,7 +51,7 @@ const PhpSerializer = () => {
     }
     
     // Handle objects with new ClassName() syntax
-    const objectMatch = code.match(/^new\s+(\w+)\s*\((.*)\)$/);
+    const objectMatch = code.match(/^new\s+(\w+)\s*\((.*)\)$/s);
     if (objectMatch) {
       const className = objectMatch[1];
       const props = parsePhpArray(objectMatch[2]);
