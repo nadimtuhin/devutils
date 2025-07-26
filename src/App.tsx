@@ -90,6 +90,7 @@ import HtmlMinifyBeautify from "./components/HtmlMinifyBeautify";
 import SpotlightSearch from "./components/SpotlightSearch";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import Credits from "./components/Credits";
+import GuidedTour, { useShouldShowTour } from "./components/GuidedTour";
 import {
   DndContext,
   closestCenter,
@@ -197,6 +198,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const { shouldShow: shouldShowTour, setShouldShow: setShowTour } = useShouldShowTour();
   const [tools, setTools] = useState<Tool[]>(() => {
     const savedOrder = localStorage.getItem("toolsOrder");
     if (savedOrder) {
@@ -235,6 +237,11 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
       if ((e.metaKey || e.ctrlKey) && e.key === "?") {
         e.preventDefault();
         setIsShortcutsOpen(true);
+      }
+      // Command/Control + Shift + ? for tour
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "?") {
+        e.preventDefault();
+        setShowTour(true);
       }
     };
 
@@ -289,6 +296,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
               <RouterLink
                 to="/"
                 className="text-xl font-bold text-gray-800 no-underline"
+                data-tour="sidebar-brand"
               >
                 DevUtils
               </RouterLink>
@@ -308,6 +316,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                     onClick={() => setIsSpotlightOpen(true)}
                     className="p-1.5 hover:bg-gray-100 rounded"
                     title="Search (⌘K)"
+                    data-tour="search-button"
                   >
                     <Search size={18} />
                   </button>
@@ -315,6 +324,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                     onClick={() => setIsShortcutsOpen(true)}
                     className="p-1.5 hover:bg-gray-100 rounded"
                     title="Keyboard Shortcuts (⌘?)"
+                    data-tour="shortcuts-button"
                   >
                     <Keyboard size={18} />
                   </button>
@@ -322,6 +332,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                     onClick={() => setIsSidebarExpanded(false)}
                     className="p-1.5 hover:bg-gray-100 rounded"
                     title="Collapse Sidebar"
+                    data-tour="sidebar-toggle"
                   >
                     <PanelLeftClose size={18} />
                   </button>
@@ -330,7 +341,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
             </div>
           </div>
           {isSidebarExpanded && (
-            <div className="flex space-x-2">
+            <div className="flex space-x-2" data-tour="github-links">
               <a
                 href="https://github.com/nadimtuhin/devutils"
                 target="_blank"
@@ -352,7 +363,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
             </div>
           )}
         </div>
-        <nav className="p-2 flex-1">
+        <nav className="p-2 flex-1" data-tour="tool-list">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -380,7 +391,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto" data-tour="main-content">
         <div className="p-8">
           <Routes>
             <Route path="/" element={<Navigate to="/unix-time" replace />} />
@@ -414,6 +425,12 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
       <KeyboardShortcuts
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
+      />
+
+      {/* Guided Tour */}
+      <GuidedTour
+        isOpen={shouldShowTour}
+        onClose={() => setShowTour(false)}
       />
     </div>
   );
