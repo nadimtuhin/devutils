@@ -331,7 +331,7 @@ export default function JsonValidator() {
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="w-full h-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"
+              className="w-full min-h-[400px] h-[calc(100vh-180px)] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"
               placeholder="Paste your JSON here or click a sample button above..."
             />
             {error && (
@@ -398,7 +398,7 @@ export default function JsonValidator() {
             </div>
           </div>
           
-          <div className="border border-gray-300 rounded-md h-96 overflow-hidden">
+          <div className="border border-gray-300 rounded-md min-h-[400px] h-[calc(100vh-180px)] overflow-hidden">
             {error ? (
               <div className="p-4 text-red-600 bg-red-50 h-full">
                 <div className="font-semibold mb-2">JSON Validation Error:</div>

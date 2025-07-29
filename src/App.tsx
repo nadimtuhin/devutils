@@ -48,6 +48,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   GripVertical,
+  PlayCircle,
 } from "lucide-react";
 import UnixTimeConverter from "./components/UnixTimeConverter";
 import JsonValidator from "./components/JsonValidator";
@@ -90,6 +91,9 @@ import HtmlMinifyBeautify from "./components/HtmlMinifyBeautify";
 import SpotlightSearch from "./components/SpotlightSearch";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import Credits from "./components/Credits";
+import WelcomeScreen from "./components/WelcomeScreen";
+import UserJourney from "./components/UserJourney";
+import { OnboardingProvider, useOnboarding } from "./contexts/OnboardingContext";
 import {
   DndContext,
   closestCenter,
@@ -121,11 +125,14 @@ function SortableToolItem({
   tool,
   currentPath,
   isSidebarExpanded,
+  isDragActive,
 }: {
   tool: Tool;
   currentPath: string;
   isSidebarExpanded: boolean;
+  isDragActive: boolean;
 }) {
+  const isCredits = tool.id === "credits";
   const {
     attributes,
     listeners,
@@ -133,9 +140,7 @@ function SortableToolItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: tool.id });
-
-  const [isDragStarted, setIsDragStarted] = useState(false);
+  } = useSortable({ id: tool.id, disabled: isCredits });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -143,18 +148,11 @@ function SortableToolItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const handleMouseDown = () => {
-    setIsDragStarted(false);
-  };
-
-  const handleDragStart = () => {
-    setIsDragStarted(true);
-  };
-
   const handleClick = (e: React.MouseEvent) => {
-    // Prevent navigation if drag was initiated
-    if (isDragStarted) {
+    // Prevent navigation if currently dragging
+    if (isDragActive || isDragging) {
       e.preventDefault();
+      e.stopPropagation();
       return;
     }
   };
@@ -163,11 +161,9 @@ function SortableToolItem({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      onMouseDown={handleMouseDown}
-      onDragStart={handleDragStart}
-      className={`group mb-1 relative cursor-grab active:cursor-grabbing ${isDragging ? "z-50" : ""}`}
+      {...(!isCredits ? attributes : {})}
+      {...(!isCredits ? listeners : {})}
+      className={`group mb-1 relative ${!isCredits ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "z-50" : ""}`}
     >
       <RouterLink
         to={tool.url}
@@ -179,12 +175,12 @@ function SortableToolItem({
         } no-underline`}
         title={!isSidebarExpanded ? tool.name : undefined}
       >
-        {isSidebarExpanded && (
+        {isSidebarExpanded && !isCredits && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
             <GripVertical size={16} className="text-gray-400" />
           </div>
         )}
-        <div className={isSidebarExpanded ? "ml-5" : ""}>{tool.icon}</div>
+        <div className={isSidebarExpanded && !isCredits ? "ml-5" : ""}>{tool.icon}</div>
         {isSidebarExpanded && (
           <span className="text-sm font-medium">{tool.name}</span>
         )}
@@ -197,6 +193,8 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const { state, startTour, hideWelcome, notifyDragComplete } = useOnboarding();
   const [tools, setTools] = useState<Tool[]>(() => {
     const savedOrder = localStorage.getItem("toolsOrder");
     if (savedOrder) {
@@ -211,8 +209,27 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
         (tool) => !orderIds.includes(tool.id)
       );
 
-      return [...orderedTools, ...newTools];
+      const allTools = [...orderedTools, ...newTools];
+      
+      // Ensure credits is always at the end
+      const creditsIndex = allTools.findIndex((tool) => tool.id === "credits");
+      if (creditsIndex !== -1 && creditsIndex !== allTools.length - 1) {
+        const creditsItem = allTools[creditsIndex];
+        const toolsWithoutCredits = allTools.filter((tool) => tool.id !== "credits");
+        return [...toolsWithoutCredits, creditsItem];
+      }
+      
+      return allTools;
     }
+    
+    // Ensure credits is at the end for initial load
+    const creditsIndex = defaultTools.findIndex((tool) => tool.id === "credits");
+    if (creditsIndex !== -1 && creditsIndex !== defaultTools.length - 1) {
+      const creditsItem = defaultTools[creditsIndex];
+      const toolsWithoutCredits = defaultTools.filter((tool) => tool.id !== "credits");
+      return [...toolsWithoutCredits, creditsItem];
+    }
+    
     return defaultTools;
   });
 
@@ -224,16 +241,19 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
       // Command/Control + K for spotlight
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
+        setIsShortcutsOpen(false);
         setIsSpotlightOpen(true);
       }
       // Control + Shift + P for spotlight
       if (e.ctrlKey && e.shiftKey && e.key === "P") {
         e.preventDefault();
+        setIsShortcutsOpen(false);
         setIsSpotlightOpen(true);
       }
       // Command/Control + ? for shortcuts
       if ((e.metaKey || e.ctrlKey) && e.key === "?") {
         e.preventDefault();
+        setIsSpotlightOpen(false);
         setIsShortcutsOpen(true);
       }
     };
@@ -242,6 +262,14 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Close modals when tutorial step changes
+  useEffect(() => {
+    if (state.isTourActive) {
+      setIsSpotlightOpen(false);
+      setIsShortcutsOpen(false);
+    }
+  }, [state.currentTourStep, state.isTourActive]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -249,15 +277,37 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     })
   );
 
+  const handleDragStart = () => {
+    setIsDragActive(true);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    
+    // Set a timeout to reset drag state to allow click events to be properly handled
+    setTimeout(() => {
+      setIsDragActive(false);
+    }, 100);
+
+    // Notify tutorial system that a drag completed
+    if (over && active.id !== over.id) {
+      notifyDragComplete();
+    }
 
     if (over && active.id !== over.id) {
       const enabledTools = tools.filter((tool) => tool.isEnabled);
-      const oldIndex = enabledTools.findIndex((tool) => tool.id === active.id);
-      const newIndex = enabledTools.findIndex((tool) => tool.id === over.id);
+      
+      // Exclude credits from reordering - it should always remain last
+      const enabledToolsWithoutCredits = enabledTools.filter((tool) => tool.id !== "credits");
+      const creditsItem = enabledTools.find((tool) => tool.id === "credits");
+      
+      const oldIndex = enabledToolsWithoutCredits.findIndex((tool) => tool.id === active.id);
+      const newIndex = enabledToolsWithoutCredits.findIndex((tool) => tool.id === over.id);
 
-      const reorderedEnabledTools = arrayMove(enabledTools, oldIndex, newIndex);
+      const reorderedTools = arrayMove(enabledToolsWithoutCredits, oldIndex, newIndex);
+      
+      // Add credits back at the end if it exists
+      const reorderedEnabledTools = creditsItem ? [...reorderedTools, creditsItem] : reorderedTools;
 
       // Reconstruct the full tools array with disabled tools in their original positions
       const newTools = tools.map((tool) => {
@@ -277,11 +327,25 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
     }
   };
 
+  const handleStartTour = () => {
+    console.log('Start tutorial button clicked');
+    console.log('Current tour state:', state);
+    startTour();
+  };
+
+  const handleSkipWelcome = () => {
+    hideWelcome();
+  };
+
+  if (!state.hasSeenWelcome) {
+    return <WelcomeScreen onGetStarted={handleStartTour} />;
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div
-        className={`${isSidebarExpanded ? "w-64" : "w-16"} bg-white shadow-lg overflow-y-auto flex flex-col transition-all duration-200 ease-in-out`}
+        className={`${isSidebarExpanded ? "w-64" : "w-16"} bg-white shadow-lg overflow-y-auto flex flex-col transition-all duration-200 ease-in-out sidebar`}
       >
         <div className="p-4 border-b">
           <div className="flex justify-between items-center mb-3">
@@ -305,18 +369,31 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
               {isSidebarExpanded && (
                 <>
                   <button
-                    onClick={() => setIsSpotlightOpen(true)}
+                    onClick={() => {
+                      setIsShortcutsOpen(false);
+                      setIsSpotlightOpen(true);
+                    }}
                     className="p-1.5 hover:bg-gray-100 rounded"
                     title="Search (⌘K)"
                   >
                     <Search size={18} />
                   </button>
                   <button
-                    onClick={() => setIsShortcutsOpen(true)}
+                    onClick={() => {
+                      setIsSpotlightOpen(false);
+                      setIsShortcutsOpen(true);
+                    }}
                     className="p-1.5 hover:bg-gray-100 rounded"
                     title="Keyboard Shortcuts (⌘?)"
                   >
                     <Keyboard size={18} />
+                  </button>
+                  <button
+                    onClick={handleStartTour}
+                    className="p-1.5 hover:bg-gray-100 rounded"
+                    title="Start Tutorial"
+                  >
+                    <PlayCircle size={18} />
                   </button>
                   <button
                     onClick={() => setIsSidebarExpanded(false)}
@@ -356,6 +433,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -372,11 +450,19 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                     tool={tool}
                     currentPath={currentPath}
                     isSidebarExpanded={isSidebarExpanded}
+                    isDragActive={isDragActive}
                   />
                 ))}
             </SortableContext>
           </DndContext>
         </nav>
+        {isSidebarExpanded && (
+          <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
+            <div className="flex items-center justify-center">
+              Last updated: Jul 23, 2025
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -415,11 +501,14 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
+
+      {/* User Journey Tutorial */}
+      <UserJourney />
     </div>
   );
 }
 
-function App() {
+function AppContent() {
   const tools: Tool[] = [
     {
       id: "cron-parser",
@@ -739,6 +828,14 @@ function App() {
     <BrowserRouter>
       <Layout tools={tools} />
     </BrowserRouter>
+  );
+}
+
+function App() {
+  return (
+    <OnboardingProvider>
+      <AppContent />
+    </OnboardingProvider>
   );
 }
 
