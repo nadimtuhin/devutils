@@ -822,7 +822,7 @@ function AppContent() {
       icon: <ShieldIcon size={20} />,
       component: <Base64SecretDecoder />,
       url: "/k8s-secret-decoder",
-      isEnabled: false,
+      isEnabled: true,
     },
     {
       id: "credits",
