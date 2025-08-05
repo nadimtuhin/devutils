@@ -268,14 +268,20 @@ export function generateValuePreview(value: string, maxLength: number = 15): str
   const displayValue = isBase64 ? safeBase64Decode(value) : value;
   
   if (displayValue === '[Invalid Base64]') {
-    return value.substring(0, 3) + '*'.repeat(Math.min(value.length - 3, maxLength - 3));
+    const prefixLength = Math.min(3, value.length);
+    const asteriskCount = Math.max(0, Math.min(value.length - prefixLength, maxLength - prefixLength));
+    return value.substring(0, prefixLength) + '*'.repeat(asteriskCount);
   }
+  
+  const prefixLength = Math.min(3, displayValue.length);
   
   if (displayValue.length <= maxLength) {
-    return displayValue.substring(0, 3) + '*'.repeat(displayValue.length - 3);
+    const asteriskCount = Math.max(0, displayValue.length - prefixLength);
+    return displayValue.substring(0, prefixLength) + '*'.repeat(asteriskCount);
   }
   
-  return displayValue.substring(0, 3) + '*'.repeat(maxLength - 3);
+  const asteriskCount = Math.max(0, maxLength - prefixLength);
+  return displayValue.substring(0, prefixLength) + '*'.repeat(asteriskCount);
 }
 
 /**
