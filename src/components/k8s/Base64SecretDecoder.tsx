@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Eye, EyeOff, Copy, AlertTriangle, CheckCircle, Info, RotateCcw } from 'lucide-react';
-import TextAreaWithCopy from '../TextAreaWithCopy';
+import { TextAreaWithCopy } from '../TextAreaWithCopy';
 import {
   parseKubernetesSecret,
   validateSecretYaml,
@@ -126,7 +126,7 @@ export default function Base64SecretDecoder() {
         <div className="p-4">
           <TextAreaWithCopy
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => handleInputChange(e.target.value)}
             placeholder={`apiVersion: v1
 kind: Secret
 metadata:
@@ -135,8 +135,6 @@ data:
   DATABASE_URL: cG9zdGdyZXM6Ly91c2VyOnB3ZEBsb2NhbGhvc3Q6NTQzMi9kYg==
   API_KEY: c2stYWJjZGVmZ2hpams=
   config.json: eyJwb3J0IjozMDAwLCJkZWJ1ZyI6dHJ1ZX0=`}
-            rows={12}
-            showCopy={false}
           />
           
           <div className="flex space-x-2 mt-4">
