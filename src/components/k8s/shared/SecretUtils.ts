@@ -314,3 +314,162 @@ export function validateSecretYaml(yamlContent: string): { isValid: boolean; err
     errors
   };
 }
+
+/**
+ * Generates YAML from parsed secret data
+ */
+export function generateSecretYaml(parsedData: ParsedSecretData): string {
+  const { metadata, keys } = parsedData;
+  
+  let yaml = `apiVersion: v1
+kind: Secret
+metadata:
+  name: ${metadata.name}`;
+  
+  if (metadata.namespace !== 'default') {
+    yaml += `
+  namespace: ${metadata.namespace}`;
+  }
+  
+  yaml += `
+type: ${metadata.type}`;
+
+  // Separate data and stringData keys
+  const dataKeys = keys.filter(k => k.encoding === 'base64');
+  const stringDataKeys = keys.filter(k => k.encoding === 'string');
+
+  if (dataKeys.length > 0) {
+    yaml += '\ndata:';
+    dataKeys.forEach(key => {
+      yaml += `\n  ${key.key}: ${key.value}`;
+    });
+  }
+
+  if (stringDataKeys.length > 0) {
+    yaml += '\nstringData:';
+    stringDataKeys.forEach(key => {
+      // Properly quote string values that contain special characters
+      const quotedValue = key.value.includes(':') || key.value.includes('"') || key.value.includes("'")
+        ? `"${key.value.replace(/"/g, '\\"')}"` 
+        : key.value;
+      yaml += `\n  ${key.key}: ${quotedValue}`;
+    });
+  }
+
+  return yaml;
+}
+
+/**
+ * Updates a specific key in the parsed data
+ */
+export function updateSecretKey(
+  parsedData: ParsedSecretData, 
+  keyName: string, 
+  newValue: string, 
+  encoding: 'base64' | 'string' = 'base64'
+): ParsedSecretData {
+  const updatedKeys = parsedData.keys.map(key => {
+    if (key.key === keyName) {
+      const finalValue = encoding === 'base64' ? safeBase64Encode(newValue) : newValue;
+      const analysis = analyzeSecretValue(keyName, finalValue);
+      
+      return {
+        ...key,
+        value: finalValue,
+        encoding,
+        type: analysis.detectedType
+      };
+    }
+    return key;
+  });
+
+  // Recalculate analysis
+  const allWarnings: string[] = [];
+  const allSuggestions: string[] = [];
+  
+  updatedKeys.forEach(key => {
+    const analysis = analyzeSecretValue(key.key, key.value);
+    allWarnings.push(...analysis.warnings);
+    allSuggestions.push(...analysis.suggestions);
+  });
+
+  return {
+    ...parsedData,
+    keys: updatedKeys,
+    analysis: {
+      totalKeys: updatedKeys.length,
+      securityWarnings: [...new Set(allWarnings)],
+      suggestions: [...new Set(allSuggestions)]
+    }
+  };
+}
+
+/**
+ * Adds a new key to the parsed data
+ */
+export function addSecretKey(
+  parsedData: ParsedSecretData,
+  keyName: string,
+  value: string,
+  encoding: 'base64' | 'string' = 'base64'
+): ParsedSecretData {
+  const finalValue = encoding === 'base64' ? safeBase64Encode(value) : value;
+  const analysis = analyzeSecretValue(keyName, finalValue);
+  
+  const newKey: SecretKeyValue = {
+    key: keyName,
+    value: finalValue,
+    encoding,
+    type: analysis.detectedType,
+    include: true
+  };
+
+  const updatedKeys = [...parsedData.keys, newKey];
+  
+  // Recalculate analysis
+  const allWarnings: string[] = [];
+  const allSuggestions: string[] = [];
+  
+  updatedKeys.forEach(key => {
+    const keyAnalysis = analyzeSecretValue(key.key, key.value);
+    allWarnings.push(...keyAnalysis.warnings);
+    allSuggestions.push(...keyAnalysis.suggestions);
+  });
+
+  return {
+    ...parsedData,
+    keys: updatedKeys,
+    analysis: {
+      totalKeys: updatedKeys.length,
+      securityWarnings: [...new Set(allWarnings)],
+      suggestions: [...new Set(allSuggestions)]
+    }
+  };
+}
+
+/**
+ * Removes a key from the parsed data
+ */
+export function removeSecretKey(parsedData: ParsedSecretData, keyName: string): ParsedSecretData {
+  const updatedKeys = parsedData.keys.filter(key => key.key !== keyName);
+  
+  // Recalculate analysis
+  const allWarnings: string[] = [];
+  const allSuggestions: string[] = [];
+  
+  updatedKeys.forEach(key => {
+    const analysis = analyzeSecretValue(key.key, key.value);
+    allWarnings.push(...analysis.warnings);
+    allSuggestions.push(...analysis.suggestions);
+  });
+
+  return {
+    ...parsedData,
+    keys: updatedKeys,
+    analysis: {
+      totalKeys: updatedKeys.length,
+      securityWarnings: [...new Set(allWarnings)],
+      suggestions: [...new Set(allSuggestions)]
+    }
+  };
+}
