@@ -49,6 +49,7 @@ import {
   PanelLeft,
   GripVertical,
   PlayCircle,
+  Shield as ShieldIcon,
 } from "lucide-react";
 import UnixTimeConverter from "./components/UnixTimeConverter";
 import JsonValidator from "./components/JsonValidator";
@@ -93,6 +94,7 @@ import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import Credits from "./components/Credits";
 import WelcomeScreen from "./components/WelcomeScreen";
 import UserJourney from "./components/UserJourney";
+import Base64SecretDecoder from "./components/k8s/Base64SecretDecoder";
 import { OnboardingProvider, useOnboarding } from "./contexts/OnboardingContext";
 import {
   DndContext,
@@ -813,6 +815,14 @@ function AppContent() {
       component: <ColorConverter />,
       url: "/color-converter",
       isEnabled: false,
+    },
+    {
+      id: "k8s-secret-decoder",
+      name: "K8s Secret Decoder",
+      icon: <ShieldIcon size={20} />,
+      component: <Base64SecretDecoder />,
+      url: "/k8s-secret-decoder",
+      isEnabled: true,
     },
     {
       id: "credits",
