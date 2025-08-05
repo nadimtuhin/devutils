@@ -195,6 +195,11 @@ data:
       expect(generateValuePreview('hello!')).toBe('hel***');
     });
 
+    it('should generate preview for very short values', () => {
+      expect(generateValuePreview('ab')).toBe('ab');
+      expect(generateValuePreview('a')).toBe('a');
+    });
+
     it('should generate preview for long values', () => {
       expect(generateValuePreview('verylongpassword123456')).toBe('ver************');
     });
@@ -206,6 +211,12 @@ data:
 
     it('should handle empty values', () => {
       expect(generateValuePreview('')).toBe('');
+    });
+
+    it('should handle edge cases without throwing errors', () => {
+      expect(() => generateValuePreview('x')).not.toThrow();
+      expect(() => generateValuePreview('xy')).not.toThrow();
+      expect(() => generateValuePreview('xyz')).not.toThrow();
     });
   });
 
