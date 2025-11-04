@@ -65,6 +65,7 @@ import HtmlPreview from "./components/HtmlPreview";
 import TextDiff from "./components/TextDiff";
 import YamlToJson from "./components/YamlToJson";
 import YamlFormatter from "./components/YamlFormatter";
+import MakefileValidator from "./components/MakefileValidator";
 import NumberBaseConverter from "./components/NumberBaseConverter";
 import LoremIpsum from "./components/LoremIpsum";
 import JsonToCsv from "./components/JsonToCsv";
@@ -532,6 +533,14 @@ function AppContent() {
       icon: <FileCode size={20} />,
       component: <YamlFormatter />,
       url: "/yaml-formatter",
+      isEnabled: true,
+    },
+    {
+      id: "makefile-validator",
+      name: "Makefile Validator",
+      icon: <FileText size={20} />,
+      component: <MakefileValidator />,
+      url: "/makefile-validator",
       isEnabled: true,
     },
     {
