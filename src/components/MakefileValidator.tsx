@@ -39,7 +39,21 @@ export default function MakefileValidator() {
       const line = lines[i];
       const lineNum = i + 1;
 
-      // Skip empty lines and comments
+      // Check for recipe lines first (must start with tab)
+      if (line.startsWith("\t")) {
+        if (!currentRule) {
+          foundIssues.push({
+            line: lineNum,
+            type: "error",
+            message: "Recipe line without a target",
+          });
+        } else {
+          currentRule.recipes.push(line.substring(1));
+        }
+        continue;
+      }
+
+      // Skip empty lines and comments (but not tab-indented ones, which are recipes)
       if (!line.trim() || line.trim().startsWith("#")) {
         if (currentRule) {
           foundRules.push(currentRule);
@@ -49,7 +63,8 @@ export default function MakefileValidator() {
       }
 
       // Check for target definition (line with colon not in a recipe)
-      if (line.match(/^[^\t].*:/) && !line.startsWith("\t")) {
+      // Modified regex to match lines starting with : (empty target)
+      if ((line.match(/^[^\t]*:/) || line.startsWith(":")) && !line.startsWith("\t")) {
         // Save previous rule
         if (currentRule) {
           foundRules.push(currentRule);
@@ -82,18 +97,6 @@ export default function MakefileValidator() {
           recipes: [],
           lineNumber: lineNum,
         };
-      }
-      // Check for recipe lines (must start with tab)
-      else if (line.startsWith("\t")) {
-        if (!currentRule) {
-          foundIssues.push({
-            line: lineNum,
-            type: "error",
-            message: "Recipe line without a target",
-          });
-        } else {
-          currentRule.recipes.push(line.substring(1));
-        }
       }
       // Check for lines that should be recipes but use spaces
       else if (line.match(/^[ ]{2,}/)) {
