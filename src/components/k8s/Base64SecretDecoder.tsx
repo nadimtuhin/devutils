@@ -353,11 +353,15 @@ data:
                       <tbody className="divide-y divide-gray-200">
                         {parsedData.keys.map((keyData: SecretKeyValue) => {
                           const analysis = keyAnalysisMap.get(keyData.key) || analyzeSecretValue(keyData.key, keyData.value);
-                          const preview = generateValuePreview(keyData.value);
+                          const isRevealed = revealedValues[keyData.key];
+                          const fullValue = keyData.encoding === 'base64'
+                            ? safeDecodeAndSanitize(keyData.value)
+                            : sanitizeValue(keyData.value);
+                          const preview = isRevealed ? fullValue : generateValuePreview(keyData.value);
                           const hasWarnings = analysis.warnings.length > 0;
-                          
+
                           return (
-                            <tr 
+                            <tr
                               key={keyData.key}
                               className={`cursor-pointer hover:bg-gray-50 ${selectedKey === keyData.key ? 'bg-blue-50' : ''}`}
                               onClick={() => selectKey(keyData.key)}
@@ -378,7 +382,7 @@ data:
                                   </span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 font-mono text-sm text-gray-600">
+                              <td className="px-4 py-3 font-mono text-sm text-gray-600 break-all">
                                 {preview}
                               </td>
                               <td className="px-4 py-3">
