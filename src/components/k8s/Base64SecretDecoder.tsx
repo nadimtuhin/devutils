@@ -132,6 +132,8 @@ function Base64SecretDecoderComponent() {
       newValue: currentValue,
       encoding: keyData.encoding
     });
+    setSelectedKey(key);
+    setSidebarOpen(true);
   }, [parsedData]);
 
   const saveEdit = useCallback(() => {
@@ -531,7 +533,7 @@ data:
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900">
-                {addingNew ? 'Add New Key' : selectedKey ? `Edit: ${selectedKey}` : 'Key Details'}
+                {addingNew ? 'Add New Key' : editingKey ? `Edit: ${editingKey.key}` : 'Key Details'}
               </h3>
               <button
                 onClick={() => {
