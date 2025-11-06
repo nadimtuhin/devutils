@@ -122,15 +122,15 @@ describe('SecretUtils', () => {
     });
 
     it('should detect GitHub token', () => {
-      const analysis = analyzeSecretValue('github_token', 'ghp_abcdefghijklmnopqrstuvwxyz123456');
+      const analysis = analyzeSecretValue('github_token', 'ghp_' + 'a'.repeat(36));
       expect(analysis.detectedType).toBe('token');
-      expect(analysis.warnings).toContain('Appears to be a GitHub personal access token');
+      expect(analysis.warnings).toContain('Appears to be a GitHub Personal Access Token');
     });
 
     it('should detect AWS access key', () => {
       const analysis = analyzeSecretValue('aws_key', 'AKIAIOSFODNN7EXAMPLE');
       expect(analysis.detectedType).toBe('token');
-      expect(analysis.warnings).toContain('Appears to be an AWS access key');
+      expect(analysis.warnings).toContain('Appears to be an AWS Access Key');
     });
 
     it('should warn about plaintext passwords', () => {
@@ -166,7 +166,7 @@ stringData:
       
       const configKey = result.keys.find(k => k.key === 'config');
       expect(configKey?.encoding).toBe('string');
-      expect(configKey?.type).toBe('text'); // Single quoted JSON is detected as text
+      expect(configKey?.type).toBe('json'); // JSON is correctly detected
     });
 
     it('should handle missing optional fields with defaults', () => {
@@ -183,9 +183,9 @@ data:
     });
 
     it('should handle invalid YAML gracefully', () => {
-      const result = parseKubernetesSecret('invalid yaml content');
-      expect(result.keys).toHaveLength(0);
-      expect(result.metadata.name).toBe('unnamed-secret');
+      expect(() => {
+        parseKubernetesSecret('invalid yaml content');
+      }).toThrow('Invalid YAML structure');
     });
   });
 

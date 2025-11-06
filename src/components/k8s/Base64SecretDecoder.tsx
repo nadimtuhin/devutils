@@ -10,9 +10,12 @@ import {
   generateSecretYaml,
   updateSecretKey,
   addSecretKey,
-  removeSecretKey
+  removeSecretKey,
+  sanitizeValue,
+  safeDecodeAndSanitize
 } from './shared/SecretUtils';
 import { ParsedSecretData, SecretKeyValue } from './shared/types';
+import { ErrorBoundary } from './shared/ErrorBoundary';
 
 interface RevealedValues {
   [key: string]: boolean;
@@ -25,7 +28,7 @@ interface EditingKey {
   encoding: 'base64' | 'string';
 }
 
-export default function Base64SecretDecoder() {
+function Base64SecretDecoderComponent() {
   const [input, setInput] = useState('');
   const [parsedData, setParsedData] = useState<ParsedSecretData | null>(null);
   const [error, setError] = useState<string>('');
@@ -42,6 +45,16 @@ export default function Base64SecretDecoder() {
   const generatedYaml = useMemo(() => {
     if (!parsedData) return '';
     return generateSecretYaml(parsedData);
+  }, [parsedData]);
+
+  // Memoize analysis for all keys to prevent recalculation on every render
+  const keyAnalysisMap = useMemo(() => {
+    if (!parsedData) return new Map();
+    const map = new Map();
+    parsedData.keys.forEach(keyData => {
+      map.set(keyData.key, analyzeSecretValue(keyData.key, keyData.value));
+    });
+    return map;
   }, [parsedData]);
 
   const handleInputChange = useCallback((value: string) => {
@@ -105,13 +118,13 @@ export default function Base64SecretDecoder() {
 
   const startEditing = useCallback((key: string) => {
     if (!parsedData) return;
-    
+
     const keyData = parsedData.keys.find(k => k.key === key);
     if (!keyData) return;
 
-    const currentValue = keyData.encoding === 'base64' 
-      ? safeBase64Decode(keyData.value) 
-      : keyData.value;
+    const currentValue = keyData.encoding === 'base64'
+      ? safeDecodeAndSanitize(keyData.value)
+      : sanitizeValue(keyData.value);
 
     setEditingKey({
       key,
@@ -200,19 +213,21 @@ export default function Base64SecretDecoder() {
 
   const getSelectedKeyDetails = useCallback(() => {
     if (!selectedKey || !parsedData) return null;
-    
+
     const keyData = parsedData.keys.find(k => k.key === selectedKey);
     if (!keyData) return null;
 
-    const analysis = analyzeSecretValue(keyData.key, keyData.value);
-    const decodedValue = keyData.encoding === 'base64' ? safeBase64Decode(keyData.value) : keyData.value;
+    const analysis = keyAnalysisMap.get(keyData.key) || analyzeSecretValue(keyData.key, keyData.value);
+    const decodedValue = keyData.encoding === 'base64'
+      ? safeDecodeAndSanitize(keyData.value)
+      : sanitizeValue(keyData.value);
 
     return {
       keyData,
       analysis,
       decodedValue
     };
-  }, [selectedKey, parsedData]);
+  }, [selectedKey, parsedData, keyAnalysisMap]);
 
   const selectedDetails = getSelectedKeyDetails();
 
@@ -337,7 +352,7 @@ data:
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {parsedData.keys.map((keyData: SecretKeyValue) => {
-                          const analysis = analyzeSecretValue(keyData.key, keyData.value);
+                          const analysis = keyAnalysisMap.get(keyData.key) || analyzeSecretValue(keyData.key, keyData.value);
                           const preview = generateValuePreview(keyData.value);
                           const hasWarnings = analysis.warnings.length > 0;
                           
@@ -385,9 +400,9 @@ data:
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      const value = keyData.encoding === 'base64' 
-                                        ? safeBase64Decode(keyData.value) 
-                                        : keyData.value;
+                                      const value = keyData.encoding === 'base64'
+                                        ? safeDecodeAndSanitize(keyData.value)
+                                        : sanitizeValue(keyData.value);
                                       copyToClipboard(value);
                                     }}
                                     className="p-1 hover:bg-gray-200 rounded"
@@ -770,5 +785,14 @@ data:
         </div>
       )}
     </div>
+  );
+}
+
+// Wrap component with ErrorBoundary for better error handling
+export default function Base64SecretDecoder() {
+  return (
+    <ErrorBoundary>
+      <Base64SecretDecoderComponent />
+    </ErrorBoundary>
   );
 }
