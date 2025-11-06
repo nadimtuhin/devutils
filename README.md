@@ -13,9 +13,11 @@ DevUtils is a comprehensive suite of developer utilities designed for maximum pr
 
 ## 🛠 Tool Categories
 
-### **Code Formatting & Beautification**
+### **Code Formatting & Validation**
 - **SQL Formatter** - Format and beautify SQL queries with syntax highlighting
 - **JSON Validator & Beautifier** - Validate, format, and minify JSON data
+- **YAML Formatter & Validator** - Format and validate YAML with syntax highlighting
+- **Makefile Validator** - Validate Makefile syntax and detect common errors
 - **HTML Minifier/Beautifier** - Optimize or format HTML markup
 - **CSS Processor** - Minify, beautify, and optimize CSS stylesheets
 - **JavaScript Formatter** - Format and minify JavaScript code

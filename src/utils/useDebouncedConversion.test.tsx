@@ -1,14 +1,13 @@
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import { useDebouncedConversion } from './useDebouncedConversion';
 
 jest.useFakeTimers();
 
 describe('useDebouncedConversion', () => {
   it('returns converted value after debounce', () => {
+    let value = 'abc';
     const { result, rerender } = renderHook(
-      ({ value }: { value: string }) =>
-        useDebouncedConversion(value, (v) => v.toUpperCase(), 200),
-      { initialProps: { value: 'abc' } }
+      () => useDebouncedConversion(value, (v) => v.toUpperCase(), 200)
     );
     expect(result.current[0]).toBe('');
     act(() => {
@@ -17,7 +16,8 @@ describe('useDebouncedConversion', () => {
     expect(result.current[0]).toBe('ABC');
     expect(result.current[1]).toBeNull();
 
-    rerender({ value: 'xyz' });
+    value = 'xyz';
+    rerender();
     act(() => {
       jest.advanceTimersByTime(200);
     });
@@ -25,10 +25,9 @@ describe('useDebouncedConversion', () => {
   });
 
   it('handles conversion errors', () => {
+    let value = 'err';
     const { result, rerender } = renderHook(
-      ({ value }: { value: string }) =>
-        useDebouncedConversion(value, () => { throw new Error('fail'); }, 100),
-      { initialProps: { value: 'err' } }
+      () => useDebouncedConversion(value, () => { throw new Error('fail'); }, 100)
     );
     act(() => {
       jest.advanceTimersByTime(100);
@@ -36,7 +35,8 @@ describe('useDebouncedConversion', () => {
     expect(result.current[0]).toBe('');
     expect(result.current[1]).toBe('fail');
 
-    rerender({ value: 'ok' });
+    value = 'ok';
+    rerender();
     act(() => {
       jest.advanceTimersByTime(100);
     });
@@ -44,13 +44,14 @@ describe('useDebouncedConversion', () => {
   });
 
   it('debounces rapid input changes', () => {
+    let value = 'a';
     const { result, rerender } = renderHook(
-      ({ value }: { value: string }) =>
-        useDebouncedConversion(value, (v) => v + '!', 300),
-      { initialProps: { value: 'a' } }
+      () => useDebouncedConversion(value, (v) => v + '!', 300)
     );
-    rerender({ value: 'ab' });
-    rerender({ value: 'abc' });
+    value = 'ab';
+    rerender();
+    value = 'abc';
+    rerender();
     act(() => {
       jest.advanceTimersByTime(299);
     });
