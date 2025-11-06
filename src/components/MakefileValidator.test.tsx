@@ -206,4 +206,95 @@ all: $(TARGET)
       });
     });
   });
+
+  describe("Line Numbers", () => {
+    it("shows line numbers by default", () => {
+      render(<MakefileValidator />);
+      const checkbox = screen.getByRole("checkbox", { name: /show line numbers/i });
+      expect(checkbox).toBeChecked();
+    });
+
+    it("toggles line numbers when checkbox is clicked", () => {
+      render(<MakefileValidator />);
+      const checkbox = screen.getByRole("checkbox", { name: /show line numbers/i });
+
+      expect(checkbox).toBeChecked();
+
+      fireEvent.click(checkbox);
+      expect(checkbox).not.toBeChecked();
+
+      fireEvent.click(checkbox);
+      expect(checkbox).toBeChecked();
+    });
+
+    it("renders line numbers with correct height constraint", () => {
+      render(<MakefileValidator />);
+      const textarea = screen.getByPlaceholderText("Paste your Makefile here...");
+
+      const makefile = `line1
+line2
+line3`;
+
+      fireEvent.change(textarea, { target: { value: makefile } });
+
+      // Find the line numbers container
+      const lineNumbersContainer = textarea.parentElement?.querySelector('.absolute');
+
+      expect(lineNumbersContainer).toBeInTheDocument();
+      expect(lineNumbersContainer).toHaveClass('h-[600px]');
+      expect(lineNumbersContainer).toHaveClass('overflow-hidden');
+    });
+
+    it("renders correct number of line numbers", () => {
+      render(<MakefileValidator />);
+      const textarea = screen.getByPlaceholderText("Paste your Makefile here...");
+
+      const makefile = `line1
+line2
+line3
+line4
+line5`;
+
+      fireEvent.change(textarea, { target: { value: makefile } });
+
+      // Find all line number elements
+      const lineNumbersContainer = textarea.parentElement?.querySelector('.absolute');
+      const lineNumberDivs = lineNumbersContainer?.querySelectorAll('div');
+
+      expect(lineNumberDivs?.length).toBe(5);
+    });
+
+    it("does not render line numbers when checkbox is unchecked", () => {
+      render(<MakefileValidator />);
+      const textarea = screen.getByPlaceholderText("Paste your Makefile here...");
+      const checkbox = screen.getByRole("checkbox", { name: /show line numbers/i });
+
+      fireEvent.change(textarea, { target: { value: "line1\nline2" } });
+
+      // Uncheck the checkbox
+      fireEvent.click(checkbox);
+
+      // Line numbers container should not be rendered
+      const lineNumbersContainer = textarea.parentElement?.querySelector('.absolute');
+      expect(lineNumbersContainer).not.toBeInTheDocument();
+    });
+
+    it("updates line numbers count when content changes", () => {
+      render(<MakefileValidator />);
+      const textarea = screen.getByPlaceholderText("Paste your Makefile here...");
+
+      fireEvent.change(textarea, { target: { value: "line1\nline2" } });
+
+      let lineNumbersContainer = textarea.parentElement?.querySelector('.absolute');
+      let lineNumberDivs = lineNumbersContainer?.querySelectorAll('div');
+      expect(lineNumberDivs?.length).toBe(2);
+
+      // Add more lines
+      fireEvent.change(textarea, { target: { value: "line1\nline2\nline3\nline4" } });
+
+      lineNumbersContainer = textarea.parentElement?.querySelector('.absolute');
+      lineNumberDivs = lineNumbersContainer?.querySelectorAll('div');
+      expect(lineNumberDivs?.length).toBe(4);
+    });
+  });
 });
