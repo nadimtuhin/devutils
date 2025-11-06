@@ -1,8 +1,22 @@
-import { SecretValueType, SecretAnalysis, SecretKeyValue, ParsedSecretData } from './types';
+import * as yaml from 'js-yaml';
+import DOMPurify from 'dompurify';
+import { SecretValueType, SecretAnalysis, SecretKeyValue, ParsedSecretData, KubernetesSecret } from './types';
 
 /**
  * Utility functions for Kubernetes Secret operations
  */
+
+// Constants for magic numbers
+export const CONSTANTS = {
+  MAX_SECRET_SIZE_BYTES: 1024 * 1024, // 1MB limit for secrets
+  MAX_KEY_COUNT: 100, // Maximum number of keys
+  PREVIEW_LENGTH: 15,
+  PREVIEW_PREFIX_LENGTH: 3,
+  MIN_TOKEN_LENGTH: 20,
+  MIN_PASSWORD_LENGTH: 8,
+  HIGH_ENTROPY_THRESHOLD: 0.6,
+  MEDIUM_ENTROPY_THRESHOLD: 0.3,
+} as const;
 
 /**
  * Checks if a string is valid base64
@@ -36,6 +50,29 @@ export function safeBase64Encode(str: string): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * Sanitizes a value to prevent XSS attacks
+ * Uses DOMPurify to strip out potentially malicious content
+ */
+export function sanitizeValue(value: string): string {
+  // Configure DOMPurify to be strict
+  const config = {
+    ALLOWED_TAGS: [], // No HTML tags allowed
+    ALLOWED_ATTR: [], // No attributes allowed
+    KEEP_CONTENT: true, // Keep the text content
+  };
+
+  return DOMPurify.sanitize(value, config);
+}
+
+/**
+ * Safely decodes and sanitizes a base64 value
+ */
+export function safeDecodeAndSanitize(value: string): string {
+  const decoded = safeBase64Decode(value);
+  return sanitizeValue(decoded);
 }
 
 /**
@@ -77,25 +114,65 @@ export function detectSecretValueType(value: string): SecretValueType {
     return 'xml';
   }
 
-  // Token detection (common patterns) - check before binary
-  // OpenAI API key
-  if (value.startsWith('sk-') && /^sk-[a-zA-Z0-9]{32,}$/.test(value)) return 'token';
-  // GitHub token
-  if ((value.startsWith('ghp_') || value.startsWith('gho_')) && value.length > 20) return 'token';
-  // AWS access key
-  if (value.startsWith('AKIA') && value.length === 20 && /^[A-Z0-9]+$/.test(value)) return 'token';
-  
+  // Token detection (comprehensive patterns) - check before binary
+  const tokenPatterns = [
+    // OpenAI
+    { pattern: /^sk-[a-zA-Z0-9]{32,}$/, name: 'OpenAI API key' },
+    { pattern: /^sk-proj-[a-zA-Z0-9]{32,}$/, name: 'OpenAI Project key' },
+    // GitHub
+    { pattern: /^ghp_[a-zA-Z0-9]{36}$/, name: 'GitHub Personal Access Token' },
+    { pattern: /^gho_[a-zA-Z0-9]{36}$/, name: 'GitHub OAuth Token' },
+    { pattern: /^ghs_[a-zA-Z0-9]{36}$/, name: 'GitHub Server Token' },
+    { pattern: /^ghr_[a-zA-Z0-9]{36}$/, name: 'GitHub Refresh Token' },
+    { pattern: /^github_pat_[a-zA-Z0-9_]{82}$/, name: 'GitHub Fine-Grained PAT' },
+    // AWS
+    { pattern: /^AKIA[0-9A-Z]{16}$/, name: 'AWS Access Key' },
+    { pattern: /^ASIA[0-9A-Z]{16}$/, name: 'AWS Session Token' },
+    // Google Cloud
+    { pattern: /^AIza[0-9A-Za-z_-]{35}$/, name: 'Google API Key' },
+    // Stripe
+    { pattern: /^sk_live_[a-zA-Z0-9]{24,}$/, name: 'Stripe Live Secret Key' },
+    { pattern: /^sk_test_[a-zA-Z0-9]{24,}$/, name: 'Stripe Test Secret Key' },
+    { pattern: /^rk_live_[a-zA-Z0-9]{24,}$/, name: 'Stripe Live Restricted Key' },
+    // Slack
+    { pattern: /^xox[baprs]-[a-zA-Z0-9-]{10,}$/, name: 'Slack Token' },
+    // Twilio
+    { pattern: /^SK[a-z0-9]{32}$/, name: 'Twilio API Key' },
+    // SendGrid
+    { pattern: /^SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}$/, name: 'SendGrid API Key' },
+    // DigitalOcean
+    { pattern: /^dop_v1_[a-f0-9]{64}$/, name: 'DigitalOcean Token' },
+    // Heroku
+    { pattern: /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/, name: 'Heroku API Key' },
+    // NPM
+    { pattern: /^npm_[a-zA-Z0-9]{36}$/, name: 'NPM Token' },
+    // Mailgun
+    { pattern: /^key-[a-zA-Z0-9]{32}$/, name: 'Mailgun API Key' },
+    // Azure
+    { pattern: /^[a-zA-Z0-9/+]{86}==$/, name: 'Azure Storage Key' },
+    // JWT
+    { pattern: /^eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/, name: 'JWT Token' },
+  ];
+
+  for (const { pattern } of tokenPatterns) {
+    if (pattern.test(value)) {
+      return 'token';
+    }
+  }
+
   // Binary detection (non-printable characters)
   // eslint-disable-next-line no-control-regex
   if (/[\x00-\x08\x0E-\x1F\x7F-\xFF]/.test(value)) {
     return 'binary';
   }
 
-  // General high-entropy string
-  if (/^[a-zA-Z0-9_-]{30,}$/.test(value) && calculateEntropy(value) === 'high') return 'token';
+  // General high-entropy string (longer tokens)
+  if (value.length >= 30 && /^[a-zA-Z0-9_-]{30,}$/.test(value) && calculateEntropy(value) === 'high') {
+    return 'token';
+  }
 
   // Password detection (heuristic)
-  if (value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)) {
+  if (value.length >= CONSTANTS.MIN_PASSWORD_LENGTH && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)) {
     return 'password';
   }
 
@@ -107,12 +184,12 @@ export function detectSecretValueType(value: string): SecretValueType {
  */
 export function calculateEntropy(str: string): 'low' | 'medium' | 'high' {
   if (str.length === 0) return 'low';
-  
+
   const uniqueChars = new Set(str).size;
   const ratio = uniqueChars / str.length;
-  
-  if (ratio >= 0.6) return 'high';
-  if (ratio >= 0.3) return 'medium';
+
+  if (ratio >= CONSTANTS.HIGH_ENTROPY_THRESHOLD) return 'high';
+  if (ratio >= CONSTANTS.MEDIUM_ENTROPY_THRESHOLD) return 'medium';
   return 'low';
 }
 
@@ -142,12 +219,34 @@ export function analyzeSecretValue(key: string, value: string): SecretAnalysis {
   }
 
   if (detectedType === 'token') {
-    if (checkValue.startsWith('sk-')) {
-      warnings.push('Appears to be an OpenAI API key');
-    } else if (checkValue.startsWith('ghp_')) {
-      warnings.push('Appears to be a GitHub personal access token');
-    } else if (checkValue.startsWith('AKIA')) {
-      warnings.push('Appears to be an AWS access key');
+    // Enhanced token detection warnings
+    const tokenWarnings = [
+      { pattern: /^sk-[a-zA-Z0-9]{32,}$/, warning: 'Appears to be an OpenAI API key' },
+      { pattern: /^sk-proj-[a-zA-Z0-9]{32,}$/, warning: 'Appears to be an OpenAI Project key' },
+      { pattern: /^ghp_[a-zA-Z0-9]{36}$/, warning: 'Appears to be a GitHub Personal Access Token' },
+      { pattern: /^gho_[a-zA-Z0-9]{36}$/, warning: 'Appears to be a GitHub OAuth Token' },
+      { pattern: /^ghs_[a-zA-Z0-9]{36}$/, warning: 'Appears to be a GitHub Server Token' },
+      { pattern: /^ghr_[a-zA-Z0-9]{36}$/, warning: 'Appears to be a GitHub Refresh Token' },
+      { pattern: /^github_pat_[a-zA-Z0-9_]{82}$/, warning: 'Appears to be a GitHub Fine-Grained PAT' },
+      { pattern: /^AKIA[0-9A-Z]{16}$/, warning: 'Appears to be an AWS Access Key' },
+      { pattern: /^ASIA[0-9A-Z]{16}$/, warning: 'Appears to be an AWS Session Token' },
+      { pattern: /^AIza[0-9A-Za-z_-]{35}$/, warning: 'Appears to be a Google API Key' },
+      { pattern: /^sk_live_[a-zA-Z0-9]{24,}$/, warning: 'Appears to be a Stripe Live Secret Key - HIGHLY SENSITIVE' },
+      { pattern: /^sk_test_[a-zA-Z0-9]{24,}$/, warning: 'Appears to be a Stripe Test Secret Key' },
+      { pattern: /^xox[baprs]-[a-zA-Z0-9-]{10,}$/, warning: 'Appears to be a Slack Token' },
+      { pattern: /^SK[a-z0-9]{32}$/, warning: 'Appears to be a Twilio API Key' },
+      { pattern: /^SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}$/, warning: 'Appears to be a SendGrid API Key' },
+      { pattern: /^dop_v1_[a-f0-9]{64}$/, warning: 'Appears to be a DigitalOcean Token' },
+      { pattern: /^npm_[a-zA-Z0-9]{36}$/, warning: 'Appears to be an NPM Token' },
+      { pattern: /^key-[a-zA-Z0-9]{32}$/, warning: 'Appears to be a Mailgun API Key' },
+      { pattern: /^eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/, warning: 'Appears to be a JWT Token' },
+    ];
+
+    for (const { pattern, warning } of tokenWarnings) {
+      if (pattern.test(checkValue)) {
+        warnings.push(warning);
+        break;
+      }
     }
   }
 
@@ -174,39 +273,33 @@ export function analyzeSecretValue(key: string, value: string): SecretAnalysis {
  */
 export function parseKubernetesSecret(yamlContent: string): ParsedSecretData {
   try {
-    // Simple YAML parsing for Secret structure
-    const lines = yamlContent.split('\n');
-    let secretName = '';
-    let secretNamespace = 'default';
-    let secretType = 'Opaque';
-    let currentSection = '';
-    const dataSection: Record<string, string> = {};
-    const stringDataSection: Record<string, string> = {};
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      if (trimmedLine.startsWith('name:')) {
-        secretName = trimmedLine.split(':')[1].trim();
-      } else if (trimmedLine.startsWith('namespace:')) {
-        secretNamespace = trimmedLine.split(':')[1].trim();
-      } else if (trimmedLine.startsWith('type:')) {
-        secretType = trimmedLine.split(':')[1].trim();
-      } else if (trimmedLine === 'data:') {
-        currentSection = 'data';
-      } else if (trimmedLine === 'stringData:') {
-        currentSection = 'stringData';
-      } else if (trimmedLine.includes(':') && currentSection) {
-        const [key, ...valueParts] = trimmedLine.split(':');
-        const value = valueParts.join(':').trim();
-        
-        if (currentSection === 'data') {
-          dataSection[key.trim()] = value;
-        } else if (currentSection === 'stringData') {
-          stringDataSection[key.trim()] = value;
-        }
-      }
+    // Check secret size
+    const sizeInBytes = new Blob([yamlContent]).size;
+    if (sizeInBytes > CONSTANTS.MAX_SECRET_SIZE_BYTES) {
+      throw new Error(`Secret size (${Math.round(sizeInBytes / 1024)}KB) exceeds maximum allowed size (${Math.round(CONSTANTS.MAX_SECRET_SIZE_BYTES / 1024)}KB)`);
     }
+
+    // Use js-yaml for proper YAML parsing
+    const parsed = yaml.load(yamlContent) as KubernetesSecret;
+
+    // Validate required fields
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Invalid YAML structure');
+    }
+
+    if (parsed.kind !== 'Secret') {
+      throw new Error('YAML is not a Kubernetes Secret');
+    }
+
+    if (!parsed.metadata || !parsed.metadata.name) {
+      throw new Error('Secret must have metadata.name');
+    }
+
+    const secretName = parsed.metadata.name;
+    const secretNamespace = parsed.metadata.namespace || 'default';
+    const secretType = parsed.type || 'Opaque';
+    const dataSection = parsed.data || {};
+    const stringDataSection = parsed.stringData || {};
 
     const keys: SecretKeyValue[] = [];
     const securityWarnings: string[] = [];
@@ -240,10 +333,15 @@ export function parseKubernetesSecret(yamlContent: string): ParsedSecretData {
       suggestions.push(...analysis.suggestions);
     });
 
+    // Check for too many keys
+    if (keys.length > CONSTANTS.MAX_KEY_COUNT) {
+      securityWarnings.push(`Secret contains ${keys.length} keys, which exceeds recommended maximum of ${CONSTANTS.MAX_KEY_COUNT}`);
+    }
+
     return {
       keys,
       metadata: {
-        name: secretName || 'unnamed-secret',
+        name: secretName,
         namespace: secretNamespace,
         type: secretType
       },
@@ -254,6 +352,9 @@ export function parseKubernetesSecret(yamlContent: string): ParsedSecretData {
       }
     };
   } catch (error) {
+    if (error instanceof yaml.YAMLException) {
+      throw new Error(`YAML parsing error: ${error.message}`);
+    }
     throw new Error(`Failed to parse Kubernetes Secret: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -261,25 +362,25 @@ export function parseKubernetesSecret(yamlContent: string): ParsedSecretData {
 /**
  * Generates a preview of a secret value (truncated with asterisks)
  */
-export function generateValuePreview(value: string, maxLength: number = 15): string {
+export function generateValuePreview(value: string, maxLength: number = CONSTANTS.PREVIEW_LENGTH): string {
   if (value === '') return '';
-  
+
   const isBase64 = isValidBase64(value);
   const displayValue = isBase64 ? safeBase64Decode(value) : value;
-  
+
   if (displayValue === '[Invalid Base64]') {
-    const prefixLength = Math.min(3, value.length);
+    const prefixLength = Math.min(CONSTANTS.PREVIEW_PREFIX_LENGTH, value.length);
     const asteriskCount = Math.max(0, Math.min(value.length - prefixLength, maxLength - prefixLength));
     return value.substring(0, prefixLength) + '*'.repeat(asteriskCount);
   }
-  
-  const prefixLength = Math.min(3, displayValue.length);
-  
+
+  const prefixLength = Math.min(CONSTANTS.PREVIEW_PREFIX_LENGTH, displayValue.length);
+
   if (displayValue.length <= maxLength) {
     const asteriskCount = Math.max(0, displayValue.length - prefixLength);
     return displayValue.substring(0, prefixLength) + '*'.repeat(asteriskCount);
   }
-  
+
   const asteriskCount = Math.max(0, maxLength - prefixLength);
   return displayValue.substring(0, prefixLength) + '*'.repeat(asteriskCount);
 }

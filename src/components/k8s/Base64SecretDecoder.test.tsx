@@ -4,24 +4,24 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import Base64SecretDecoder from './Base64SecretDecoder';
 
 // Mock the TextAreaWithCopy component
-jest.mock('../TextAreaWithCopy', () => {
-  return function TextAreaWithCopy({ value, onChange, placeholder, rows }: {
+jest.mock('../TextAreaWithCopy', () => ({
+  TextAreaWithCopy: ({ value, onChange, placeholder, readOnly }: {
     value: string;
-    onChange: (value: string) => void;
-    placeholder: string;
-    rows: number;
-  }) {
+    onChange?: (e: { target: { value: string } }) => void;
+    placeholder?: string;
+    readOnly?: boolean;
+  }) => {
     return (
       <textarea
         data-testid="secret-input"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         placeholder={placeholder}
-        rows={rows}
+        readOnly={readOnly}
       />
     );
-  };
-});
+  }
+}));
 
 // Mock clipboard API
 Object.assign(navigator, {
@@ -53,9 +53,9 @@ metadata:
   describe('Component Rendering', () => {
     it('should render the main heading and description', () => {
       render(<Base64SecretDecoder />);
-      
-      expect(screen.getByText('Base64 Secret Decoder & Validator')).toBeInTheDocument();
-      expect(screen.getByText(/Parse Kubernetes Secret YAML/)).toBeInTheDocument();
+
+      expect(screen.getByText('Base64 Secret Decoder & Editor')).toBeInTheDocument();
+      expect(screen.getByText(/Parse, decode, and edit Kubernetes Secrets/)).toBeInTheDocument();
     });
 
     it('should render input method selection', () => {
@@ -121,11 +121,11 @@ metadata:
   describe('Secret Parsing and Display', () => {
     it('should parse and display valid secret', () => {
       render(<Base64SecretDecoder />);
-      
+
       const textarea = screen.getByTestId('secret-input');
       fireEvent.change(textarea, { target: { value: validSecretYaml } });
-      
-      expect(screen.getByText('Decoded Values')).toBeInTheDocument();
+
+      expect(screen.getByText('Secret Keys')).toBeInTheDocument();
       expect(screen.getByText('Secret Summary')).toBeInTheDocument();
     });
 
