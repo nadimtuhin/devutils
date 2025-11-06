@@ -245,7 +245,7 @@ run: $(TARGET)
   const renderLineNumbers = () => {
     const lineCount = input.split("\n").length;
     return (
-      <div className="absolute left-0 top-0 pt-3 pb-3 pl-3 pr-2 bg-gray-50 border-r border-gray-300 select-none text-gray-500 text-sm font-mono leading-6">
+      <div className="absolute left-0 top-0 h-[600px] pt-3 pb-3 pl-3 pr-2 bg-gray-50 border-r border-gray-300 select-none text-gray-500 text-sm font-mono leading-6 overflow-hidden">
         {Array.from({ length: lineCount }, (_, i) => (
           <div key={i} className="text-right">
             {i + 1}
