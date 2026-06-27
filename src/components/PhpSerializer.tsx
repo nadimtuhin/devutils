@@ -7,7 +7,7 @@ const PhpSerializer = () => {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'serialize' | 'unserialize'>('serialize');
 
-  // Enhanced PHP serialization format implementation
+  // PHP serialization format implementation
   const serializeValue = (value: any): string => {
     if (value === null || value === undefined) {
       return 'N;';
@@ -16,13 +16,16 @@ const PhpSerializer = () => {
       return `b:${value ? '1' : '0'};`;
     }
     if (typeof value === 'number') {
+      if (!isFinite(value)) {
+        if (isNaN(value)) return 'd:NAN;';
+        return value > 0 ? 'd:INF;' : 'd:-INF;';
+      }
       if (Number.isInteger(value)) {
         return `i:${value};`;
       }
       return `d:${value};`;
     }
     if (typeof value === 'string') {
-      // Handle UTF-8 byte length correctly
       const byteLength = new TextEncoder().encode(value).length;
       return `s:${byteLength}:"${value}";`;
     }
@@ -31,6 +34,14 @@ const PhpSerializer = () => {
       return `a:${value.length}:{${elements}}`;
     }
     if (typeof value === 'object') {
+      // Support __class property to emit O: (PHP object) format
+      const { __class, ...props } = value as any;
+      if (__class && typeof __class === 'string') {
+        const entries = Object.entries(props);
+        const elements = entries.map(([k, v]) => `${serializeValue(k)}${serializeValue(v)}`).join('');
+        const byteLen = new TextEncoder().encode(__class).length;
+        return `O:${byteLen}:"${__class}":${entries.length}:{${elements}}`;
+      }
       const entries = Object.entries(value);
       const elements = entries.map(([k, v]) => `${serializeValue(k)}${serializeValue(v)}`).join('');
       return `a:${entries.length}:{${elements}}`;
@@ -38,101 +49,161 @@ const PhpSerializer = () => {
     throw new Error(`Unsupported type: ${typeof value}`);
   };
 
-  // Enhanced PHP unserialization implementation
+  // PHP unserialization implementation
   const unserializeValue = (input: string): { value: any; rest: string } => {
-    input = input.trim();
-    
+    // Do NOT trim — byte positions in s: strings are significant
+
     if (input.startsWith('N;')) {
       return { value: null, rest: input.slice(2) };
     }
-    
+
     if (input.startsWith('b:')) {
       if (input.length < 4) throw new Error('Invalid boolean format');
       const value = input[2] === '1';
       return { value, rest: input.slice(4) };
     }
-    
+
     if (input.startsWith('i:')) {
       const end = input.indexOf(';');
       if (end === -1) throw new Error('Invalid integer format');
       const numStr = input.slice(2, end);
       if (!/^-?\d+$/.test(numStr)) throw new Error('Invalid integer value');
-      const value = parseInt(numStr, 10);
-      return { value, rest: input.slice(end + 1) };
+      return { value: parseInt(numStr, 10), rest: input.slice(end + 1) };
     }
-    
+
     if (input.startsWith('d:')) {
       const end = input.indexOf(';');
       if (end === -1) throw new Error('Invalid double format');
       const numStr = input.slice(2, end);
+      // Handle PHP special float values: INF, -INF, NAN
+      if (numStr === 'INF') return { value: Infinity, rest: input.slice(end + 1) };
+      if (numStr === '-INF') return { value: -Infinity, rest: input.slice(end + 1) };
+      if (numStr === 'NAN') return { value: NaN, rest: input.slice(end + 1) };
       const value = parseFloat(numStr);
-      if (isNaN(value)) throw new Error('Invalid double value');
+      if (isNaN(value)) throw new Error(`Invalid double value: ${numStr}`);
       return { value, rest: input.slice(end + 1) };
     }
-    
+
     if (input.startsWith('s:')) {
       const colonPos = input.indexOf(':', 2);
       if (colonPos === -1) throw new Error('Invalid string format');
       const lengthStr = input.slice(2, colonPos);
       if (!/^\d+$/.test(lengthStr)) throw new Error('Invalid string length');
-      const length = parseInt(lengthStr, 10);
-      
+      const byteLength = parseInt(lengthStr, 10);
+
       if (input[colonPos + 1] !== '"') throw new Error('String must start with quote');
       const startPos = colonPos + 2;
-      const endPos = startPos + length;
-      
-      if (input.length < endPos + 2) throw new Error('String too short');
+
+      // Decode exactly byteLength UTF-8 bytes from the JS string
+      const bytes = new Uint8Array(byteLength);
+      let byteIdx = 0;
+      let charIdx = startPos;
+      while (byteIdx < byteLength && charIdx < input.length) {
+        const code = input.codePointAt(charIdx)!;
+        if (code < 0x80) {
+          bytes[byteIdx++] = code;
+          charIdx++;
+        } else if (code < 0x800) {
+          bytes[byteIdx++] = 0xc0 | (code >> 6);
+          bytes[byteIdx++] = 0x80 | (code & 0x3f);
+          charIdx++;
+        } else if (code < 0x10000) {
+          bytes[byteIdx++] = 0xe0 | (code >> 12);
+          bytes[byteIdx++] = 0x80 | ((code >> 6) & 0x3f);
+          bytes[byteIdx++] = 0x80 | (code & 0x3f);
+          charIdx++;
+        } else {
+          bytes[byteIdx++] = 0xf0 | (code >> 18);
+          bytes[byteIdx++] = 0x80 | ((code >> 12) & 0x3f);
+          bytes[byteIdx++] = 0x80 | ((code >> 6) & 0x3f);
+          bytes[byteIdx++] = 0x80 | (code & 0x3f);
+          charIdx += 2; // surrogate pair = 2 JS chars
+        }
+      }
+      const value = new TextDecoder().decode(bytes);
+
+      const endPos = charIdx;
       if (input[endPos] !== '"' || input[endPos + 1] !== ';') {
         throw new Error('String must end with quote and semicolon');
       }
-      
-      const value = input.slice(startPos, endPos);
       return { value, rest: input.slice(endPos + 2) };
     }
-    
+
     if (input.startsWith('a:')) {
       const colonPos = input.indexOf(':', 2);
       if (colonPos === -1) throw new Error('Invalid array format');
       const lengthStr = input.slice(2, colonPos);
       if (!/^\d+$/.test(lengthStr)) throw new Error('Invalid array length');
       const length = parseInt(lengthStr, 10);
-      
+
       let rest = input.slice(colonPos + 1);
       if (!rest.startsWith('{')) throw new Error('Array must start with {');
       rest = rest.slice(1);
-      
-      const result: any = {};
+
+      const result: Record<string | number, any> = {};
       let isSequentialArray = true;
-      
+
       for (let i = 0; i < length; i++) {
         const keyResult = unserializeValue(rest);
         const valueResult = unserializeValue(keyResult.rest);
         rest = valueResult.rest;
-        
         result[keyResult.value] = valueResult.value;
-        
-        // Check if this is a sequential array
+        // Sequential: integer keys 0, 1, 2, ... in order
         if (keyResult.value !== i) {
           isSequentialArray = false;
         }
       }
-      
+
       if (!rest.startsWith('}')) throw new Error('Array must end with }');
       rest = rest.slice(1);
-      
-      // Convert to array if it's sequential
-      if (isSequentialArray && length > 0) {
-        const arr = [];
-        for (let i = 0; i < length; i++) {
-          arr[i] = result[i];
-        }
-        return { value: arr, rest };
+
+      // Empty PHP array OR sequential integer-keyed array → JS array
+      if (length === 0 || isSequentialArray) {
+        return { value: Array.from({ length }, (_, i) => result[i]), rest };
       }
-      
+
       return { value: result, rest };
     }
-    
-    throw new Error(`Unsupported or invalid serialized format: ${input.slice(0, 10)}...`);
+
+    // PHP object: O:<classname_byte_len>:"<classname>":<prop_count>:{...}
+    if (input.startsWith('O:')) {
+      const firstColon = input.indexOf(':', 2);
+      if (firstColon === -1) throw new Error('Invalid object format');
+      // Find the quoted class name (skip byte-length number)
+      const quoteStart = input.indexOf('"', firstColon);
+      if (quoteStart === -1) throw new Error('Invalid object class name');
+      const quoteEnd = input.indexOf('"', quoteStart + 1);
+      if (quoteEnd === -1) throw new Error('Invalid object class name end');
+      const className = input.slice(quoteStart + 1, quoteEnd);
+
+      // After closing quote: :<prop_count>:{
+      const afterClass = input.slice(quoteEnd + 1);
+      const propColonEnd = afterClass.indexOf(':', 1);
+      if (propColonEnd === -1) throw new Error('Invalid object prop count');
+      const propCountStr = afterClass.slice(1, propColonEnd);
+      if (!/^\d+$/.test(propCountStr)) throw new Error('Invalid object prop count value');
+      const propCount = parseInt(propCountStr, 10);
+
+      let rest = afterClass.slice(propColonEnd + 1);
+      if (!rest.startsWith('{')) throw new Error('Object must start with {');
+      rest = rest.slice(1);
+
+      // Represent as plain object with __class marker
+      const result: Record<string, any> = { __class: className };
+      for (let i = 0; i < propCount; i++) {
+        const keyResult = unserializeValue(rest);
+        const valueResult = unserializeValue(keyResult.rest);
+        rest = valueResult.rest;
+        result[String(keyResult.value)] = valueResult.value;
+      }
+
+      if (!rest.startsWith('}')) throw new Error('Object must end with }');
+      rest = rest.slice(1);
+
+      return { value: result, rest };
+    }
+
+    throw new Error(`Unsupported or invalid serialized format: ${JSON.stringify(input.slice(0, 20))}`);
   };
 
   const handleSerialize = (input: string) => {
