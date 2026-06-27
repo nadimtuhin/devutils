@@ -50,7 +50,25 @@ import {
   GripVertical,
   PlayCircle,
   Shield as ShieldIcon,
+  Moon,
+  Sun,
 } from "lucide-react";
+
+// ── theme ─────────────────────────────────────────────────────────────────────
+function useTheme() {
+  const [dark, setDark] = useState<boolean>(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  return { dark, toggle: () => setDark((d) => !d) };
+}
 import UnixTimeConverter from "./components/UnixTimeConverter";
 import JsonValidator from "./components/JsonValidator";
 import { Base64SideBySide } from "./components/Base64SideBySide";
@@ -197,6 +215,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isDragActive, setIsDragActive] = useState(false);
+  const { dark, toggle: toggleTheme } = useTheme();
   const { state, startTour, hideWelcome, notifyDragComplete } = useOnboarding();
   const [tools, setTools] = useState<Tool[]>(() => {
     const savedOrder = localStorage.getItem("toolsOrder");
@@ -397,6 +416,13 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
                     title="Start Tutorial"
                   >
                     <PlayCircle size={18} />
+                  </button>
+                  <button
+                    onClick={toggleTheme}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    title={dark ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    {dark ? <Sun size={18} /> : <Moon size={18} />}
                   </button>
                   <button
                     onClick={() => setIsSidebarExpanded(false)}
