@@ -222,11 +222,11 @@ export default function JsonToCsv() {
         {showOptions && (
           <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Delimiter</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Delimiter</label>
               <select
                 value={options.delimiter}
                 onChange={(e) => setOptions({...options, delimiter: e.target.value})}
-                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 <option value=",">Comma (,)</option>
                 <option value=";">Semicolon (;)</option>
@@ -236,12 +236,12 @@ export default function JsonToCsv() {
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Array Delimiter</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Array Delimiter</label>
               <input
                 type="text"
                 value={options.arrayDelimiter}
                 onChange={(e) => setOptions({...options, arrayDelimiter: e.target.value})}
-                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder=";"
               />
             </div>
@@ -252,9 +252,9 @@ export default function JsonToCsv() {
                   type="checkbox"
                   checked={options.header}
                   onChange={(e) => setOptions({...options, header: e.target.checked})}
-                  className="mr-2"
+                  className="mr-2 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"
                 />
-                <span className="text-xs">Include Headers</span>
+                <span className="text-xs text-gray-700 dark:text-gray-300">Include Headers</span>
               </label>
             </div>
             
@@ -264,9 +264,9 @@ export default function JsonToCsv() {
                   type="checkbox"
                   checked={options.quotes}
                   onChange={(e) => setOptions({...options, quotes: e.target.checked})}
-                  className="mr-2"
+                  className="mr-2 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"
                 />
-                <span className="text-xs">Quote Fields</span>
+                <span className="text-xs text-gray-700 dark:text-gray-300">Quote Fields</span>
               </label>
             </div>
             
@@ -276,9 +276,9 @@ export default function JsonToCsv() {
                   type="checkbox"
                   checked={options.flattenObjects}
                   onChange={(e) => setOptions({...options, flattenObjects: e.target.checked})}
-                  className="mr-2"
+                  className="mr-2 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"
                 />
-                <span className="text-xs">Flatten Objects</span>
+                <span className="text-xs text-gray-700 dark:text-gray-300">Flatten Objects</span>
               </label>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function JsonToCsv() {
         <button
           type="button"
           onClick={loadSampleData}
-          className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           <FileText size={16} />
           <span>Load Sample</span>
@@ -299,7 +299,7 @@ export default function JsonToCsv() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           <Upload size={16} />
           <span>Upload File</span>
@@ -308,7 +308,7 @@ export default function JsonToCsv() {
         <button
           type="button"
           onClick={clearInput}
-          className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           <RefreshCw size={16} />
           <span>Clear</span>
@@ -359,10 +359,10 @@ export default function JsonToCsv() {
                     <button
                       type="button"
                       onClick={() => setViewMode('text')}
-                      className={`flex items-center space-x-1 px-2 py-1 text-xs rounded ${
+                      className={`flex items-center space-x-1 px-2 py-1 text-xs rounded transition-colors ${
                         viewMode === 'text' 
-                          ? 'bg-white text-gray-900 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' 
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                       }`}
                       title="Text view"
                     >
@@ -372,10 +372,10 @@ export default function JsonToCsv() {
                     <button
                       type="button"
                       onClick={() => setViewMode('table')}
-                      className={`flex items-center space-x-1 px-2 py-1 text-xs rounded ${
+                      className={`flex items-center space-x-1 px-2 py-1 text-xs rounded transition-colors ${
                         viewMode === 'table' 
-                          ? 'bg-white text-gray-900 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' 
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                       }`}
                       title="Table view"
                     >

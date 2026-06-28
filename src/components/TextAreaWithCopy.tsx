@@ -52,7 +52,7 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       )}
       <div className="relative flex">
         <textarea
@@ -61,18 +61,18 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
           placeholder={placeholder}
           readOnly={readOnly}
           aria-invalid={!!error}
-          className={`w-full h-32 px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-            error ? 'border-red-500' : 'border-gray-300'
-          } ${readOnly ? 'bg-gray-50' : ''} ${textareaClassName}`}
+          className={`w-full h-32 px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+            error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
+          } ${readOnly ? 'bg-gray-50 dark:bg-gray-700' : ''} ${textareaClassName}`}
         />
         <button
           type="button"
           onClick={handleCopy}
-          className={`absolute right-2 top-2 px-2 py-1 rounded bg-blue-600 text-white text-xs font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          className={`absolute right-2 top-2 px-2 py-1 rounded bg-blue-600 dark:bg-blue-500 text-white text-xs font-semibold shadow hover:bg-blue-700 dark:hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors ${
             copyStatus === 'success'
-              ? 'bg-green-600 hover:bg-green-700'
+              ? 'bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400'
               : copyStatus === 'error'
-              ? 'bg-red-600 hover:bg-red-700'
+              ? 'bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-400'
               : ''
           }`}
           aria-label="Copy to clipboard"
@@ -80,7 +80,7 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
           {copyStatus === 'success' ? 'Copied!' : copyStatus === 'error' ? 'Failed' : 'Copy'}
         </button>
       </div>
-      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
+      {error && <div className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</div>}
     </div>
   );
 }; 

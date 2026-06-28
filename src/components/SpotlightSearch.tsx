@@ -79,7 +79,7 @@ const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools }) => {
             ref={inputRef}
             type="text"
             placeholder="Search tools..."
-            className="flex-1 outline-none text-lg"
+            className="flex-1 outline-none text-lg dark:text-white"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -97,8 +97,8 @@ const SpotlightSearch: React.FC<Props> = ({ isOpen, onClose, tools }) => {
               onClick={() => handleToolSelect(tool)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
-              <span className="text-gray-600">{tool.icon}</span>
-              <span>{tool.name}</span>
+              <span className="text-gray-600 dark:text-gray-400">{tool.icon}</span>
+              <span className="dark:text-white">{tool.name}</span>
             </button>
           ))}
         </div>
