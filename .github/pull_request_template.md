@@ -1,21 +1,19 @@
 ## Description
 
-Please include a summary of the changes and the related issue.
-
-Fixes # (issue)
+<!-- A clear and concise description of what this PR does. -->
 
 ## Type of change
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Bug fix
+- [ ] New feature
+- [ ] New tool
 - [ ] Documentation update
+- [ ] Other (describe):
 
 ## Checklist
 
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] All tests pass (`npm test` or equivalent)
+- [ ] Lint passes with no new errors (`npm run lint` or equivalent)
+- [ ] Screenshots included for any UI changes
+- [ ] No `console.log` statements left in production code
+- [ ] Tool (if applicable) works fully offline without external network requests

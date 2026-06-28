@@ -1,8 +1,8 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: '[BUG] '
-labels: bug
+name: Bug Report
+about: Report a bug to help us improve
+title: "[Bug] "
+labels: [bug]
 assignees: ''
 ---
 
@@ -10,27 +10,26 @@ assignees: ''
 
 A clear and concise description of what the bug is.
 
-## To Reproduce
+## Steps to reproduce
 
-Steps to reproduce the behavior:
 1. Go to '...'
-2. Click on '....'
-3. See error
+2. Click on '...'
+3. Enter value '...'
+4. See error
 
 ## Expected behavior
 
 A clear and concise description of what you expected to happen.
 
-## Screenshots
+## Actual behavior
+
+A clear and concise description of what actually happened.
+
+## Browser / OS
+
+- Browser: [e.g. Chrome 124, Firefox 125, Safari 17]
+- OS: [e.g. macOS 14, Windows 11, Ubuntu 22.04]
+
+## Screenshots (optional)
 
 If applicable, add screenshots to help explain your problem.
-
-## Environment
-
-- OS: [e.g. macOS 14, Ubuntu 22.04]
-- Node version: [e.g. 20.x]
-- Version: [e.g. 1.0.0]
-
-## Additional context
-
-Add any other context about the problem here.
