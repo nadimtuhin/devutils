@@ -350,8 +350,6 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   };
 
   const handleStartTour = () => {
-    console.log('Start tutorial button clicked');
-    console.log('Current tour state:', state);
     startTour();
   };
 
@@ -488,7 +486,14 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
         {isSidebarExpanded && (
           <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
             <div className="flex items-center justify-center">
-              Last updated: Jul 23, 2025
+              <a
+                href="https://github.com/nadimtuhin/devutils"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-blue-600 no-underline"
+              >
+                v{__APP_VERSION__}
+              </a>
             </div>
           </div>
         )}

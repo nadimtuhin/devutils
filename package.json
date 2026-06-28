@@ -1,7 +1,7 @@
 {
   "name": "devutils",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -23,7 +23,6 @@
     "@types/csso": "^5.0.4",
     "@uiw/react-textarea-code-editor": "^3.0.2",
     "blueimp-md5": "^2.19.0",
-    "capture-website": "^4.2.0",
     "change-case": "^5.4.4",
     "colord": "^2.9.3",
     "cronstrue": "^2.53.0",
@@ -41,7 +40,6 @@
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.3",
     "react-router-dom": "^7.5.2",
-    "sharp": "^0.33.2",
     "sql-formatter": "^15.4.10",
     "terser": "^5.37.0",
     "ulid": "^2.3.0",
@@ -69,6 +67,8 @@
     "@types/sharp": "^0.32.0",
     "@types/uuid": "^9.0.8",
     "@vitejs/plugin-react": "^4.3.1",
+    "capture-website": "^4.2.0",
+    "sharp": "^0.33.2",
     "autoprefixer": "^10.4.18",
     "babel-jest": "^29.7.0",
     "eslint": "^9.9.1",
