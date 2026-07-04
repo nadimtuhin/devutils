@@ -4,10 +4,17 @@ import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 import { TextAreaWithCopy } from './TextAreaWithCopy';
 
+// Mock secure context and clipboard for testing
 Object.assign(navigator, {
   clipboard: {
     writeText: jest.fn(),
   },
+});
+
+// Mock window.isSecureContext (required for clipboard API to be used in JSDOM)
+Object.defineProperty(window, 'isSecureContext', {
+  value: true,
+  writable: true,
 });
 
 describe('TextAreaWithCopy', () => {
@@ -16,7 +23,7 @@ describe('TextAreaWithCopy', () => {
   });
 
   it('renders label, textarea, and copy button', () => {
-    render(<TextAreaWithCopy value="foo" label="Test Label" />);
+    render(<TextAreaWithCopy value="foo" label="Test Label" readOnly />);
     expect(screen.getByLabelText('Test Label')).toBeInTheDocument();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();

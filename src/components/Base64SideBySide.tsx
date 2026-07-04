@@ -41,7 +41,7 @@ const LineNumberedTextArea: React.FC<LineNumberedTextAreaProps> = ({
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor={`textarea-${label.replace(/\s+/g, '-').toLowerCase()}`} className="block text-sm font-medium text-gray-700">
           {label}
         </label>
         <button
@@ -85,6 +85,7 @@ const LineNumberedTextArea: React.FC<LineNumberedTextAreaProps> = ({
           </div>
         )}
         <textarea
+          id={`textarea-${label.replace(/\s+/g, '-').toLowerCase()}`}
           ref={textareaRef}
           value={value}
           onChange={onChange}

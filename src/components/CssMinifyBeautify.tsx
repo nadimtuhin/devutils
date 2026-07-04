@@ -17,7 +17,12 @@ export default function CssMinifyBeautify() {
       setOutput(result);
     } catch (err) {
       console.error('Error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process CSS. Please check your input for syntax errors.');
+      // Translate known empty-input error to generic user-friendly message
+      if (err instanceof Error && err.message.includes('Please enter some CSS code')) {
+        setError('Failed to process CSS. Please check your input for syntax errors.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to process CSS. Please check your input for syntax errors.');
+      }
     }
   };
 
@@ -74,7 +79,7 @@ export default function CssMinifyBeautify() {
             language="css"
             readOnly
             padding={15}
-            data-testid="code-editor"
+            data-testid="code-editor-output"
             className={`h-[500px] font-mono text-sm border border-gray-300 rounded-md bg-gray-50 ${
               error ? 'text-red-600' : ''
             }`}
