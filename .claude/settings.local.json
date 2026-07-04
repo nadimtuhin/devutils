@@ -3,7 +3,9 @@
     "allow": [
       "Bash(pnpm install:*)",
       "Bash(mkdir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git worktree:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }
