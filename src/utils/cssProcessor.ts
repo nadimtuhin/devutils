@@ -21,10 +21,14 @@ type CssNode = {
 
 const getPreludeValue = (prelude: CssNode['prelude']): string => {
   if (!prelude) return '';
-  if (prelude.type === 'AtrulePrelude') {
-    return prelude.children?.map(child => child.name).join(' ') || '';
+  if (prelude.type === 'AtrulePrelude' && Array.isArray(prelude.children)) {
+    return prelude.children.map(child => child?.name || '').filter(Boolean).join(' ') || '';
   }
-  return prelude.value || '';
+  if (prelude.value) return prelude.value;
+  if (Array.isArray(prelude.children)) {
+    return prelude.children.map(child => child?.name || child?.value || '').filter(Boolean).join(' ');
+  }
+  return '';
 };
 
 export const minifyCss = (css: string): string => {
