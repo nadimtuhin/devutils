@@ -24,6 +24,11 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/prefer-as-const": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "no-prototype-builtins": "warn",
+      "no-useless-escape": "warn",
+      "prefer-const": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
