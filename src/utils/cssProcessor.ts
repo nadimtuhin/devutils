@@ -51,7 +51,7 @@ const splitTopLevel = (text: string, separator: string): string[] => {
 
 const formatPrelude = (prelude: string): string => {
   const text = squash(prelude);
-  if (text.startsWith('@')) return text.replace(/\s*:\s*/g, ': ');
+  if (text.startsWith('@')) return text.replace(/\(\s*([\w-]+)\s*:\s*/g, '($1: ');
   return splitTopLevel(text, ',').map(squash).join(', ');
 };
 
@@ -87,6 +87,8 @@ export const beautifyCss = (css: string): string => {
         buffer += ch;
         if (ch === '\\') buffer += css[++i] ?? '';
         else if (ch === quote) quote = '';
+      } else if (ch === '\\') {
+        buffer += ch + (css[++i] ?? '');
       } else if (ch === '/' && css[i + 1] === '*') {
         const end = css.indexOf('*/', i + 2);
         if (end === -1) throw new Error('Unterminated comment');
@@ -118,6 +120,8 @@ export const beautifyCss = (css: string): string => {
         buffer += ch;
       }
     }
+    const trailingAtRule = indentLevel === 0 && squash(buffer).startsWith('@');
+    if (trailingAtRule) flushDeclaration();
     if (quote || indentLevel !== 0 || squash(buffer)) {
       throw new Error('Unbalanced braces or incomplete statement');
     }

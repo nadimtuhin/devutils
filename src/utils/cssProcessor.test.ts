@@ -2,6 +2,11 @@ import { minifyCss, beautifyCss, processCss } from './cssProcessor';
 
 describe('cssProcessor', () => {
   describe('minifyCss', () => {
+    it('should accept escaped braces and a final @import without semicolon', () => {
+      expect(() => minifyCss('.a\\{b{}')).not.toThrow();
+      expect(minifyCss('@import url(x)')).toContain('@import url(x)');
+    });
+
     it('should minify CSS by removing whitespace and newlines', () => {
       const input = `
         .example {
@@ -125,6 +130,15 @@ describe('cssProcessor', () => {
       const input = '/*Header styles*/.header{color:black}';
       const expected = '/*Header styles*/\n.header {\n  color: black;\n}';
       expect(beautifyCss(input)).toBe(expected);
+    });
+
+    it('should leave at-rule preludes and selector() arguments untouched', () => {
+      expect(beautifyCss('@page :first{margin:1in}')).toBe('@page :first {\n  margin: 1in;\n}');
+      expect(beautifyCss('@supports selector(:has(a)){a{color:red}}')).toBe('@supports selector(:has(a)) {\n  a {\n    color: red;\n  }\n}');
+    });
+
+    it('should space feature queries in at-rule preludes', () => {
+      expect(beautifyCss('@media (min-width:600px){a{color:red}}')).toBe('@media (min-width: 600px) {\n  a {\n    color: red;\n  }\n}');
     });
 
     it('should throw error for empty input', () => {
