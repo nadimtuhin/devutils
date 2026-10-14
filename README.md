@@ -2,7 +2,7 @@
 
 # DevUtils
 
-**35+ privacy-first developer tools. All processing happens in your browser — zero data sent to any server.**
+**33 privacy-first developer tools. All processing happens in your browser — zero data sent to any server.**
 
 [![CI](https://github.com/nadimtuhin/devutils/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nadimtuhin/devutils/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
@@ -18,7 +18,7 @@
 
 - **Privacy-first** — No data ever leaves your browser. Every operation runs locally.
 - **Offline-capable** — Works without an internet connection once loaded.
-- **35+ tools** — Formatters, converters, encoders, decoders, and more in one place.
+- **33 tools** — Formatters, converters, encoders, decoders, and more in one place.
 - **Free & open source** — MIT licensed, community-driven, no paywalls.
 
 ---

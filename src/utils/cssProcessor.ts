@@ -1,41 +1,17 @@
-import { minify, syntax } from 'csso';
-
-type CssNode = {
-  type: string;
-  children?: CssNode[];
-  prelude?: { 
-    type?: string;
-    value?: string;
-    children?: Array<{ name: string }>;
-  };
-  block?: { children: CssNode[] };
-  property?: string;
-  value?: { value: string };
-  name?: string;
-  important?: boolean;
-  loc?: {
-    start: { line: number; column: number };
-    end: { line: number; column: number };
-  };
-};
-
-const getPreludeValue = (prelude: CssNode['prelude']): string => {
-  if (!prelude) return '';
-  if (prelude.type === 'AtrulePrelude' && Array.isArray(prelude.children)) {
-    return prelude.children.map(child => child?.name || '').filter(Boolean).join(' ') || '';
-  }
-  if (prelude.value) return prelude.value;
-  if (Array.isArray(prelude.children)) {
-    return prelude.children.map(child => child?.name || child?.value || '').filter(Boolean).join(' ');
-  }
-  return '';
-};
+import { minify } from 'csso';
 
 export const minifyCss = (css: string): string => {
   if (!css.trim()) {
     throw new Error('Empty CSS input');
   }
-  
+
+  // csso silently drops unparseable tails, so reject malformed input first
+  try {
+    beautifyCss(css);
+  } catch (error) {
+    throw new Error(`Failed to minify CSS: ${error instanceof Error ? error.message : "Invalid syntax"}`);
+  }
+
   try {
     const minified = minify(css, {
       restructure: true,
@@ -47,87 +23,109 @@ export const minifyCss = (css: string): string => {
   }
 };
 
+const INDENT = '  ';
+
+const squash = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+const splitTopLevel = (text: string, separator: string): string[] => {
+  const parts: string[] = [];
+  let depth = 0;
+  let quote = '';
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === '\\') i++;
+      else if (ch === quote) quote = '';
+    } else if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '(' || ch === '[') depth++;
+    else if (ch === ')' || ch === ']') depth--;
+    else if (ch === separator && depth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts;
+};
+
+const formatPrelude = (prelude: string): string => {
+  const text = squash(prelude);
+  if (text.startsWith('@')) return text.replace(/\(\s*([\w-]+)\s*:\s*/g, '($1: ');
+  return splitTopLevel(text, ',').map(squash).join(', ');
+};
+
+const formatDeclaration = (statement: string): string => {
+  const text = squash(statement);
+  if (text.startsWith('@')) return text;
+  const colon = text.indexOf(':');
+  if (colon === -1) return text;
+  return `${text.slice(0, colon).trim()}: ${text.slice(colon + 1).trim()}`;
+};
+
 export const beautifyCss = (css: string): string => {
   if (!css.trim()) {
     throw new Error('Empty CSS input');
   }
 
+  const lines: string[] = [];
+  let indentLevel = 0;
+  let buffer = '';
+  let quote = '';
+  let parenDepth = 0;
+
+  const emit = (text: string) => lines.push(INDENT.repeat(indentLevel) + text);
+  const flushDeclaration = () => {
+    if (squash(buffer)) emit(`${formatDeclaration(buffer)};`);
+    buffer = '';
+  };
+
   try {
-    const ast = syntax.parse(css.trim());
-    let indentLevel = 0;
-    let beautified = '';
-    let lastNodeType = '';
-
-    const walk = (node: CssNode) => {
-      switch (node.type) {
-        case 'StyleSheet':
-          node.children?.forEach((child, index) => {
-            // Add newline between rules, but not before the first one
-            if (index > 0 && lastNodeType !== 'Comment') beautified += '\n';
-            walk(child);
-            lastNodeType = child.type;
-          });
-          break;
-
-        case 'Rule':
-          if (node.prelude?.value && node.block) {
-            // Add newline if not the first rule and previous node wasn't a comment
-            if (beautified && lastNodeType !== 'Comment') beautified += '\n';
-            beautified += '  '.repeat(indentLevel) + node.prelude.value + ' {';
-            indentLevel++;
-            node.block.children.forEach(child => {
-              beautified += '\n';
-              walk(child);
-            });
-            indentLevel--;
-            beautified += '\n' + '  '.repeat(indentLevel) + '}';
-          }
-          break;
-
-        case 'Declaration':
-          if (node.property) {
-            beautified += '  '.repeat(indentLevel) + node.property;
-            if (node.value?.value) {
-              beautified += ': ' + node.value.value;
-            }
-            beautified += ';';
-          }
-          break;
-
-        case 'Atrule':
-          if (node.name) {
-            // Add newline if not the first rule and previous node wasn't a comment
-            if (beautified && lastNodeType !== 'Comment') beautified += '\n';
-            beautified += '  '.repeat(indentLevel) + '@' + node.name;
-            const preludeValue = getPreludeValue(node.prelude);
-            if (preludeValue) {
-              beautified += ' ' + preludeValue;
-            }
-            if (node.block) {
-              beautified += ' {';
-              indentLevel++;
-              node.block.children.forEach(child => {
-                beautified += '\n';
-                walk(child);
-              });
-              indentLevel--;
-              beautified += '\n' + '  '.repeat(indentLevel) + '}';
-            } else {
-              beautified += ';';
-            }
-          }
-          break;
-
-        case 'Comment':
-          // Add newline before comment if it's not the first node
-          if (beautified) beautified += '\n';
-          beautified += '  '.repeat(indentLevel) + node.value?.value;
-          break;
+    for (let i = 0; i < css.length; i++) {
+      const ch = css[i];
+      if (quote) {
+        buffer += ch;
+        if (ch === '\\') buffer += css[++i] ?? '';
+        else if (ch === quote) quote = '';
+      } else if (ch === '\\') {
+        buffer += ch + (css[++i] ?? '');
+      } else if (ch === '/' && css[i + 1] === '*') {
+        const end = css.indexOf('*/', i + 2);
+        if (end === -1) throw new Error('Unterminated comment');
+        const comment = css.slice(i, end + 2);
+        if (squash(buffer)) buffer += comment;
+        else emit(comment);
+        i = end + 1;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        buffer += ch;
+      } else if (ch === '(') {
+        parenDepth++;
+        buffer += ch;
+      } else if (ch === ')') {
+        parenDepth--;
+        buffer += ch;
+      } else if (ch === '{' && parenDepth === 0) {
+        emit(`${formatPrelude(buffer)} {`);
+        buffer = '';
+        indentLevel++;
+      } else if (ch === ';' && parenDepth === 0) {
+        flushDeclaration();
+      } else if (ch === '}' && parenDepth === 0) {
+        flushDeclaration();
+        indentLevel--;
+        if (indentLevel < 0) throw new Error('Unexpected }');
+        emit('}');
+      } else {
+        buffer += ch;
       }
-    };
-
-    walk(ast);
-    return beautified.trim();
+    }
+    const trailingAtRule = indentLevel === 0 && squash(buffer).startsWith('@');
+    if (trailingAtRule) flushDeclaration();
+    if (quote || indentLevel !== 0 || squash(buffer)) {
+      throw new Error('Unbalanced braces or incomplete statement');
+    }
+    return lines.join('\n');
   } catch (error) {
     throw new Error(`Failed to beautify CSS: ${error instanceof Error ? error.message : 'Invalid syntax'}`);
   }
@@ -146,4 +144,4 @@ export const processCss = (css: string, mode: 'minify' | 'beautify'): string => 
     }
     throw new Error('Failed to process CSS. Please check your input for syntax errors.');
   }
-}; 
+};

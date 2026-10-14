@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { readStoredArray } from "../utils/readStoredArray";
 
 interface OnboardingState {
   hasSeenWelcome: boolean;
@@ -37,7 +38,7 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
   const [state, setState] = useState<OnboardingState>(() => {
     const hasSeenWelcome = !!localStorage.getItem(STORAGE_KEYS.WELCOME_SEEN);
     const hasCompletedTour = !!localStorage.getItem(STORAGE_KEYS.TOUR_COMPLETED);
-    const tourProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.TOUR_PROGRESS) || "[]");
+    const tourProgress = readStoredArray(STORAGE_KEYS.TOUR_PROGRESS);
 
     return {
       hasSeenWelcome,
@@ -114,7 +115,7 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const markFeatureDiscovered = (feature: string) => {
-    const discoveries = JSON.parse(localStorage.getItem(STORAGE_KEYS.FEATURE_DISCOVERIES) || "[]");
+    const discoveries = readStoredArray(STORAGE_KEYS.FEATURE_DISCOVERIES);
     if (!discoveries.includes(feature)) {
       discoveries.push(feature);
       localStorage.setItem(STORAGE_KEYS.FEATURE_DISCOVERIES, JSON.stringify(discoveries));
@@ -122,7 +123,7 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const isFeatureDiscovered = (feature: string): boolean => {
-    const discoveries = JSON.parse(localStorage.getItem(STORAGE_KEYS.FEATURE_DISCOVERIES) || "[]");
+    const discoveries = readStoredArray(STORAGE_KEYS.FEATURE_DISCOVERIES);
     return discoveries.includes(feature);
   };
 

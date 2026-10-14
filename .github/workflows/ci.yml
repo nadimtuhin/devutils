@@ -33,7 +33,7 @@ jobs:
         run: pnpm lint
 
       - name: Test
-        run: pnpm test --passWithNoTests || echo "Skipping broken unit tests"
+        run: pnpm test --passWithNoTests
 
   build:
     name: Build

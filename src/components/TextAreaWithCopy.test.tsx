@@ -10,6 +10,8 @@ Object.assign(navigator, {
   },
 });
 
+Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+
 describe('TextAreaWithCopy', () => {
   beforeEach(() => {
     jest.clearAllMocks();
