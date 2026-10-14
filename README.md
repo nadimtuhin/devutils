@@ -91,23 +91,23 @@ Everything below is reference. You don't need it to get started.
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-devutils--one.vercel.app-brightgreen?logo=vercel)](https://devutils-one.vercel.app)
 
-**38 privacy-first developer tools. All processing happens in your browser, zero data sent to any server.**
+**33 privacy-first developer tools. All processing happens in your browser, zero data sent to any server.**
 
 ## Why DevUtils
 
 - **Privacy-first**: No data ever leaves your browser. Every operation runs locally.
-- **Works without a network once loaded**: after the first visit, no connection is needed.
-- **38 tools**: Formatters, converters, encoders, decoders, and more in one place.
+- **Keeps working offline while the tab is open**: once the page has loaded, tools need no connection. There is no service worker, so a fresh visit needs the network.
+- **33 tools**: Formatters, converters, encoders, decoders, and more in one place.
 - **Free & open source**: MIT licensed, community-driven, no paywalls.
 
 ## Tools
 
 | Category | Tools |
 |---|---|
-| **Code Formatting** | SQL Formatter, JSON Validator & Beautifier, YAML Formatter, HTML Min/Beautify, CSS Processor, JavaScript Formatter |
+| **Code Formatting** | SQL Formatter, JSON Validator & Beautifier, YAML Formatter |
 | **Data Conversion** | Base64 Encoder/Decoder, Base64 Image, CSV↔JSON, YAML↔JSON, PHP Array↔JSON, PHP Serializer, SVG→CSS, Hex↔ASCII, cURL→Code, JSON→Code, HTML→JSX |
 | **Security & Crypto** | JWT Debugger, Certificate Decoder, Certificate Generator, Hash Generator (MD5/SHA), UUID/ULID Generator |
-| **Text & Utilities** | RegExp Tester, Cron Parser, Unix Timestamp, URL Parser/Encoder, Color Converter, Text Diff, Line Sorter, String Case Converter, Number Base Converter, Lorem Ipsum, HTML Entity Converter, Backslash Encoder, Markdown Preview, HTML Preview |
+| **Text & Utilities** | RegExp Tester, Cron Parser, Unix Timestamp, URL Parser/Encoder, Text Diff, Line Sorter, String Case Converter, Number Base Converter, Lorem Ipsum, HTML Entity Converter, Backslash Encoder, HTML Preview |
 
 ## Quick Start
 
