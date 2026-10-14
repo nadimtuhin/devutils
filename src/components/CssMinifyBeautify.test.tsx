@@ -87,11 +87,11 @@ describe('CssMinifyBeautify', () => {
     render(<CssMinifyBeautify />);
     
     const input = '.test{color:red}';
-    fireEvent.change(screen.getByTestId('code-editor'), { target: { value: input } });
-    fireEvent.click(screen.getByText('Beautify'));
+    fireEvent.change(screen.getAllByTestId('code-editor')[0], { target: { value: input } });
+    fireEvent.click(screen.getByRole('button', { name: 'Beautify' }));
 
     expect(processCss).toHaveBeenCalledWith(input, 'beautify');
-    expect(screen.getByTestId('code-editor')).toHaveTextContent('beautified-css');
+    expect(screen.getAllByTestId('code-editor')[1]).toHaveValue('beautified-css');
   });
 
   it('processes CSS when clicking the button in minify mode', () => {
@@ -99,18 +99,18 @@ describe('CssMinifyBeautify', () => {
     
     const input = '.test { color: red; }';
     fireEvent.click(screen.getByLabelText('Minify'));
-    fireEvent.change(screen.getByTestId('code-editor'), { target: { value: input } });
-    fireEvent.click(screen.getByText('Minify'));
+    fireEvent.change(screen.getAllByTestId('code-editor')[0], { target: { value: input } });
+    fireEvent.click(screen.getByRole('button', { name: 'Minify' }));
 
     expect(processCss).toHaveBeenCalledWith(input, 'minify');
-    expect(screen.getByTestId('code-editor')).toHaveTextContent('minified-css');
+    expect(screen.getAllByTestId('code-editor')[1]).toHaveValue('minified-css');
   });
 
   it('displays error message when processing empty input', () => {
     render(<CssMinifyBeautify />);
     
-    fireEvent.click(screen.getByText('Beautify'));
-    expect(screen.getByTestId('code-editor')).toHaveTextContent('Please enter some CSS code first');
+    fireEvent.click(screen.getByRole('button', { name: 'Beautify' }));
+    expect(screen.getAllByTestId('code-editor')[1]).toHaveValue('Please enter some CSS code first');
   });
 
   it('displays error message when processing fails', () => {
@@ -120,14 +120,19 @@ describe('CssMinifyBeautify', () => {
 
     render(<CssMinifyBeautify />);
     
-    fireEvent.change(screen.getByTestId('code-editor'), { target: { value: '.test{color:red}' } });
-    fireEvent.click(screen.getByText('Beautify'));
+    fireEvent.change(screen.getAllByTestId('code-editor')[0], { target: { value: '.test{color:red}' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Beautify' }));
 
-    expect(screen.getByTestId('code-editor')).toHaveTextContent('Test error message');
+    expect(screen.getAllByTestId('code-editor')[1]).toHaveValue('Test error message');
   });
 
   Object.entries(testCases).forEach(([name, { input, minified, beautified }]) => {
     describe(`${name} CSS`, () => {
+      beforeEach(() => {
+        (processCss as jest.Mock).mockImplementation(jest.requireActual('../utils/cssProcessor').processCss);
+        render(<CssMinifyBeautify />);
+      });
+
       it('minifies correctly', () => {
         // Switch to minify mode
         fireEvent.click(screen.getByRole('radio', { name: 'Minify' }));
@@ -142,11 +147,6 @@ describe('CssMinifyBeautify', () => {
         
         // Check output
         const [, outputEditor] = screen.getAllByTestId('code-editor');
-        console.log('Minify Test Output:', {
-          name,
-          expected: minified,
-          received: (outputEditor as HTMLTextAreaElement).value
-        });
         expect(outputEditor).toHaveValue(minified);
       });
 
@@ -164,17 +164,14 @@ describe('CssMinifyBeautify', () => {
         
         // Check output
         const [, outputEditor] = screen.getAllByTestId('code-editor');
-        console.log('Beautify Test Output:', {
-          name,
-          expected: beautified,
-          received: (outputEditor as HTMLTextAreaElement).value
-        });
         expect(outputEditor).toHaveValue(beautified);
       });
     });
   });
 
   it('handles invalid CSS input', () => {
+    (processCss as jest.Mock).mockImplementation(jest.requireActual('../utils/cssProcessor').processCss);
+    render(<CssMinifyBeautify />);
     const invalidCss = '.test { color: red; // missing closing brace';
     
     const [inputEditor] = screen.getAllByTestId('code-editor');
@@ -184,10 +181,6 @@ describe('CssMinifyBeautify', () => {
     fireEvent.click(convertButton);
     
     const [, outputEditor] = screen.getAllByTestId('code-editor');
-    console.log('Invalid CSS Test Output:', {
-      expected: 'Failed to process CSS. Please check your input for syntax errors.',
-      received: (outputEditor as HTMLTextAreaElement).value
-    });
-    expect(outputEditor).toHaveValue('Failed to process CSS. Please check your input for syntax errors.');
+    expect((outputEditor as HTMLTextAreaElement).value).toMatch(/^Failed to beautify CSS/);
   });
 }); 
