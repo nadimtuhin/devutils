@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 
 interface TextAreaWithCopyProps {
   value: string;
@@ -23,6 +23,7 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
 }) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const timeoutRef = useRef<number | null>(null);
+  const textareaId = useId();
 
   const handleCopy = async () => {
     if (!value) return;
@@ -52,10 +53,11 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+        <label htmlFor={textareaId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       )}
       <div className="relative flex">
         <textarea
+          id={textareaId}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
