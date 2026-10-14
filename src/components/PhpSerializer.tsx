@@ -65,7 +65,7 @@ const PhpSerializer = () => {
     const objectMatch = code.match(/^new\s+(\w+)\s*\((.*)\)$/s);
     if (objectMatch) {
       const className = objectMatch[1];
-      const props = parsePhpArray(objectMatch[2]);
+      const props = objectMatch[2].trim() ? parsePhpSyntax(objectMatch[2]) : {};
       return { __class: className, ...props };
     }
     
@@ -264,7 +264,7 @@ const PhpSerializer = () => {
         }
         
         const propItems = props.map(([key, val]) => {
-          const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? key : generatePhpSyntax(key);
+          const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? `'${key}'` : generatePhpSyntax(key);
           const valueStr = generatePhpSyntax(val, indent + 1);
           return `${spaces}  ${keyStr} => ${valueStr}`;
         });
