@@ -109,7 +109,7 @@ describe('PhpSerializer', () => {
       expect(phpOutput.value).toContain('d:NAN;');
       expect(phpOutput.value).toContain('s:8:"infinity"');
       expect(phpOutput.value).toContain('s:17:"negative_infinity"');
-      expect(phpOutput.value).toContain('s:13:"not_a_number"');
+      expect(phpOutput.value).toContain('s:12:"not_a_number"');
     });
 
     test('bidirectional conversion of special float values', () => {
@@ -155,7 +155,7 @@ describe('PhpSerializer', () => {
       const jsonInput = screen.getAllByRole('textbox')[0];
       const phpOutput = screen.getAllByRole('textbox')[1];
       
-      fireEvent.change(jsonInput, { target: { value: '{"name": "John", "age": 30}' } });
+      fireEvent.change(jsonInput, { target: { value: "['name' => 'John', 'age' => 30]" } });
       expect(phpOutput.value).toBe('a:2:{s:4:"name";s:4:"John";s:3:"age";i:30;}');
     });
 
@@ -163,7 +163,7 @@ describe('PhpSerializer', () => {
       const jsonInput = screen.getAllByRole('textbox')[0];
       const phpOutput = screen.getAllByRole('textbox')[1];
       
-      fireEvent.change(jsonInput, { target: { value: '{"__class": "User", "id": 123, "name": "John"}' } });
+      fireEvent.change(jsonInput, { target: { value: "new User(['id' => 123, 'name' => 'John'])" } });
       expect(phpOutput.value).toBe('O:4:"User":2:{s:2:"id";i:123;s:4:"name";s:4:"John";}');
     });
 
@@ -171,15 +171,8 @@ describe('PhpSerializer', () => {
       const jsonInput = screen.getAllByRole('textbox')[0];
       const phpOutput = screen.getAllByRole('textbox')[1];
       
-      const nested = {
-        user: {
-          name: "John",
-          tags: ["admin", "developer"]
-        }
-      };
-      
-      fireEvent.change(jsonInput, { target: { value: JSON.stringify(nested) } });
-      expect(phpOutput.value).toContain('a:1:{s:4:"user";a:2:{s:4:"name";s:4:"John";s:4:"tags";a:2:{i:0;s:5:"admin";i:1;s:9:"developer";}};}');
+      fireEvent.change(jsonInput, { target: { value: "['user' => ['name' => 'John', 'tags' => ['admin', 'developer']]]" } });
+      expect(phpOutput.value).toContain('a:1:{s:4:"user";a:2:{s:4:"name";s:4:"John";s:4:"tags";a:2:{i:0;s:5:"admin";i:1;s:9:"developer";}}}');
     });
   });
 
@@ -208,13 +201,13 @@ describe('PhpSerializer', () => {
       const jsonOutput = screen.getAllByRole('textbox')[0];
       
       fireEvent.change(phpInput, { target: { value: 'd:INF;' } });
-      expect(JSON.parse(jsonOutput.value)).toBe(Infinity);
+      expect(jsonOutput.value).toBe("INF");
       
       fireEvent.change(phpInput, { target: { value: 'd:-INF;' } });
-      expect(JSON.parse(jsonOutput.value)).toBe(-Infinity);
+      expect(jsonOutput.value).toBe("-INF");
       
       fireEvent.change(phpInput, { target: { value: 'd:NAN;' } });
-      expect(Number.isNaN(JSON.parse(jsonOutput.value))).toBe(true);
+      expect(jsonOutput.value).toBe("NAN");
     });
 
     test('unserializes strings correctly', () => {
@@ -223,11 +216,11 @@ describe('PhpSerializer', () => {
       
       // Regular string
       fireEvent.change(phpInput, { target: { value: 's:5:"hello";' } });
-      expect(JSON.parse(jsonOutput.value)).toBe('hello');
+      expect(jsonOutput.value).toBe("'hello'");
       
       // UTF-8 string
       fireEvent.change(phpInput, { target: { value: 's:5:"café";' } });
-      expect(JSON.parse(jsonOutput.value)).toBe('café');
+      expect(jsonOutput.value).toBe("'café'");
     });
 
     test('unserializes arrays correctly', () => {
@@ -236,11 +229,11 @@ describe('PhpSerializer', () => {
       
       // Sequential array
       fireEvent.change(phpInput, { target: { value: 'a:3:{i:0;s:1:"a";i:1;s:1:"b";i:2;s:1:"c";}' } });
-      expect(JSON.parse(jsonOutput.value)).toEqual(['a', 'b', 'c']);
+      expect(jsonOutput.value).toBe("[\n  'a',\n  'b',\n  'c'\n]");
       
       // Associative array
       fireEvent.change(phpInput, { target: { value: 'a:2:{s:4:"name";s:4:"John";s:3:"age";i:30;}' } });
-      expect(JSON.parse(jsonOutput.value)).toEqual({ name: 'John', age: 30 });
+      expect(jsonOutput.value).toBe("[\n  'name' => 'John',\n  'age' => 30\n]");
     });
 
     test('unserializes PHP objects correctly', () => {
@@ -248,12 +241,7 @@ describe('PhpSerializer', () => {
       const jsonOutput = screen.getAllByRole('textbox')[0];
       
       fireEvent.change(phpInput, { target: { value: 'O:4:"User":2:{s:2:"id";i:123;s:4:"name";s:4:"John";}' } });
-      const result = JSON.parse(jsonOutput.value);
-      expect(result).toEqual({
-        __class: 'User',
-        id: 123,
-        name: 'John'
-      });
+      expect(jsonOutput.value).toBe("new User([\n  'id' => 123,\n  'name' => 'John'\n])");
     });
   });
 
@@ -298,16 +286,16 @@ describe('PhpSerializer', () => {
       const phpOutput = screen.getAllByRole('textbox')[1];
       const swapButton = screen.getByText('Swap');
       
-      // Set initial values
-      fireEvent.change(jsonInput, { target: { value: '{"test": true}' } });
-      const initialJson = jsonInput.value;
-      const initialPhp = phpOutput.value;
-      
-      // Swap
+      // The panels hold different formats, so swap re-derives each side from the other
+      fireEvent.change(jsonInput, { target: { value: "['test'=>true]" } });
+      const serialized = phpOutput.value;
+      expect(serialized).toBe('a:1:{s:4:"test";b:1;}');
+
       fireEvent.click(swapButton);
-      
-      expect(jsonInput.value).toBe(initialPhp);
-      expect(phpOutput.value).toBe(initialJson);
+
+      expect(jsonInput.value).toBe("[\n  'test' => true\n]");
+      expect(phpOutput.value).toBe(serialized);
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
     });
 
     test('has clear button that clears all content', () => {
@@ -463,7 +451,7 @@ describe('PhpSerializer', () => {
       const phpOutput = screen.getAllByRole('textbox')[1];
       
       // Test that we can go from serialized -> PHP syntax -> serialized and get consistent results
-      const complexSerializedString = `a:2:{s:4:"user";O:4:"User":1:{s:1:"0";a:3:{s:2:"id";i:123;s:4:"name";s:8:"John Doe";s:5:"tags";a:2:{i:0;s:9:"developer";i:1;s:5:"admin";}}}s:8:"settings";a:2:{s:5:"theme";s:4:"dark";s:8:"language";s:5:"en-US";}}`;
+      const complexSerializedString = `a:2:{s:4:"user";O:4:"User":1:{s:1:"0";a:3:{s:2:"id";i:123;s:4:"name";s:8:"John Doe";s:4:"tags";a:2:{i:0;s:9:"developer";i:1;s:5:"admin";}}}s:8:"settings";a:2:{s:5:"theme";s:4:"dark";s:8:"language";s:5:"en-US";}}`;
       
       // Step 1: Input serialized string -> should generate PHP syntax
       fireEvent.change(phpOutput, { target: { value: complexSerializedString } });
