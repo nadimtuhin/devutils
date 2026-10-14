@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useId, useRef, useState } from "react";
 import { encodeBase64, decodeBase64 } from "../utils/base64";
 import { Copy, Hash, RotateCcw } from "lucide-react";
 
@@ -26,6 +26,7 @@ const LineNumberedTextArea: React.FC<LineNumberedTextAreaProps> = ({
   onCopy,
   copyStatus,
 }) => {
+  const textareaId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +42,7 @@ const LineNumberedTextArea: React.FC<LineNumberedTextAreaProps> = ({
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor={textareaId} className="block text-sm font-medium text-gray-700">
           {label}
         </label>
         <button
@@ -85,6 +86,7 @@ const LineNumberedTextArea: React.FC<LineNumberedTextAreaProps> = ({
           </div>
         )}
         <textarea
+          id={textareaId}
           ref={textareaRef}
           value={value}
           onChange={onChange}
