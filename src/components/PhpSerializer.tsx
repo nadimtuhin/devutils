@@ -430,11 +430,11 @@ const PhpSerializer = () => {
       
       // Find where we reach the target byte length
       while (currentByteLength < byteLength && charIndex < remainingInput.length) {
-        const char = remainingInput[charIndex];
-        const charBytes = encoder.encode(char).length;
+        const codePoint = String.fromCodePoint(remainingInput.codePointAt(charIndex)!);
+        const charBytes = encoder.encode(codePoint).length;
         if (currentByteLength + charBytes <= byteLength) {
           currentByteLength += charBytes;
-          charIndex++;
+          charIndex += codePoint.length;
         } else {
           break;
         }
