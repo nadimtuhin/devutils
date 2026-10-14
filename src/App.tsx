@@ -109,6 +109,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { readStoredArray } from "./utils/readStoredArray";
 
 type Tool = {
   id: string;
@@ -202,7 +203,7 @@ function Layout({ tools: defaultTools }: { tools: Tool[] }) {
   const [tools, setTools] = useState<Tool[]>(() => {
     const savedOrder = localStorage.getItem("toolsOrder");
     if (savedOrder) {
-      const orderIds = JSON.parse(savedOrder);
+      const orderIds = readStoredArray("toolsOrder");
       // Reconstruct tools array based on saved order
       const orderedTools = orderIds
         .map((id: string) => defaultTools.find((tool) => tool.id === id))
