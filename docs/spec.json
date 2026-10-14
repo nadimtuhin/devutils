@@ -1,0 +1,2 @@
+{ "banners": { "h-start": "OPEN IT", "h-how": "WHY IT IS SAFE", "h-help": "NEED HELP", "h-dev": "FOR DEVELOPERS" },
+  "hero": { "kicker": "OPEN SOURCE · IN YOUR BROWSER", "title": "DevUtils", "tagline": "Developer tools that never send your data anywhere" } }
