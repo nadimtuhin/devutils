@@ -79,7 +79,7 @@ describe('cssProcessor', () => {
           color: gray;
         }
       `;
-      const expected = '.button:hover{color:blue}.input::placeholder{color:gray}';
+      const expected = '.button:hover{color:#00f}.input::placeholder{color:gray}'; // csso shortens blue to #00f
       expect(minifyCss(input)).toBe(expected);
     });
   });
