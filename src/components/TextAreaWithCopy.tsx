@@ -85,4 +85,6 @@ export const TextAreaWithCopy: React.FC<TextAreaWithCopyProps> = ({
       {error && <div className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</div>}
     </div>
   );
-}; 
+};
+
+export default TextAreaWithCopy; 

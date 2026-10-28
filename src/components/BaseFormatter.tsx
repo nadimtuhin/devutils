@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Copy, Download, Settings, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { BaseFormatSettings, FormatError, ProcessingResult } from '../types/formatters';
 import { formatErrorMessage, groupErrorsBySeverity } from '../utils/errorHandling';
-import TextAreaWithCopy from './TextAreaWithCopy';
+import { TextAreaWithCopy } from './TextAreaWithCopy';
 
 interface BaseFormatterProps<T extends BaseFormatSettings> {
   title: string;

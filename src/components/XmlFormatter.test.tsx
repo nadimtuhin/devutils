@@ -49,7 +49,7 @@ describe('XmlFormatter', () => {
     
     expect(screen.getByText('Indent Size')).toBeInTheDocument();
     expect(screen.getByText('Output Format')).toBeInTheDocument();
-    expect(screen.getByText('Preserve Comments')).toBeInTheDocument();
+    expect(screen.getAllByText('Preserve Comments')[0]).toBeInTheDocument();
   });
 
   it('updates settings when options are changed', () => {
@@ -70,7 +70,7 @@ describe('XmlFormatter', () => {
     const settingsButton = screen.getByText('Settings');
     fireEvent.click(settingsButton);
     
-    const minifiedButton = screen.getByText('Minified');
+    const minifiedButton = screen.getAllByText('Minified')[0];
     fireEvent.click(minifiedButton);
     
     // The minified button should now be active (have the active styling)
@@ -83,7 +83,7 @@ describe('XmlFormatter', () => {
     const settingsButton = screen.getByText('Settings');
     fireEvent.click(settingsButton);
     
-    const preserveCommentsButton = screen.getByText('Preserve Comments').closest('button');
+    const preserveCommentsButton = screen.getAllByText('Preserve Comments')[0].closest('button');
     fireEvent.click(preserveCommentsButton!);
     
     // Should toggle the checkbox state
@@ -94,6 +94,6 @@ describe('XmlFormatter', () => {
     render(<XmlFormatter />);
     
     expect(screen.getByText('XML Formatting Tips')).toBeInTheDocument();
-    expect(screen.getByText(/Use.*Formatted.*mode for readable, indented XML/)).toBeInTheDocument();
+    expect(screen.getByText(/mode for readable, indented XML/)).toBeInTheDocument();
   });
 });

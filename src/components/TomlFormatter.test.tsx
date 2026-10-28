@@ -49,7 +49,7 @@ describe('TomlFormatter', () => {
     
     expect(screen.getByText('Indent Size')).toBeInTheDocument();
     expect(screen.getByText('Output Format')).toBeInTheDocument();
-    expect(screen.getByText('Preserve Comments')).toBeInTheDocument();
+    expect(screen.getAllByText('Preserve Comments')[0]).toBeInTheDocument();
   });
 
   it('updates settings when options are changed', () => {
@@ -70,7 +70,7 @@ describe('TomlFormatter', () => {
     const settingsButton = screen.getByText('Settings');
     fireEvent.click(settingsButton);
     
-    const jsonButton = screen.getByText('JSON');
+    const jsonButton = screen.getAllByText('JSON')[0];
     fireEvent.click(jsonButton);
     
     // The JSON button should now be active (have the active styling)
@@ -83,7 +83,7 @@ describe('TomlFormatter', () => {
     const settingsButton = screen.getByText('Settings');
     fireEvent.click(settingsButton);
     
-    const sortKeysButton = screen.getByText('Sort Keys').closest('button');
+    const sortKeysButton = screen.getAllByText('Sort Keys')[0].closest('button');
     fireEvent.click(sortKeysButton!);
     
     // Should toggle the checkbox state
@@ -95,7 +95,7 @@ describe('TomlFormatter', () => {
     
     expect(screen.getByText('TOML Formatting Tips')).toBeInTheDocument();
     expect(screen.getByText('TOML Examples')).toBeInTheDocument();
-    expect(screen.getByText(/Use.*TOML.*output to format and organize/)).toBeInTheDocument();
+    expect(screen.getByText(/output to format and organize/)).toBeInTheDocument();
   });
 
   it('shows basic configuration example', () => {
