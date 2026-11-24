@@ -1,4 +1,4 @@
-import { encodeBase64, decodeBase64 } from './base64';
+import { encodeBase64, decodeBase64, decodeBase64Url } from './base64';
 
 describe('Base64 Utilities', () => {
   it('encodes ASCII text correctly', () => {
@@ -26,5 +26,19 @@ describe('Base64 Utilities', () => {
     for (const s of samples) {
       expect(decodeBase64(encodeBase64(s))).toBe(s);
     }
+  });
+});
+
+describe('decodeBase64Url', () => {
+  it('decodes the URL-safe alphabet without padding', () => {
+    expect(decodeBase64Url('eyJxIjoiPz8_In0')).toBe('{"q":"???"}');
+  });
+
+  it('decodes UTF-8 text', () => {
+    expect(decodeBase64Url('eyJuYW1lIjoiSm9zw6kifQ')).toBe('{"name":"José"}');
+  });
+
+  it('throws on invalid input', () => {
+    expect(() => decodeBase64Url('!@#$')).toThrow('Invalid Base64 input.');
   });
 }); 

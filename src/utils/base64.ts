@@ -28,4 +28,15 @@ export function decodeBase64(base64: string): string {
   } catch (e) {
     throw new Error('Invalid Base64 input.');
   }
+}
+
+/**
+ * Decodes a Base64URL string (RFC 4648 §5, as used in JWTs) to UTF-8.
+ * @param base64Url The Base64URL string, with or without padding.
+ * @returns The decoded string.
+ * @throws Error if decoding fails.
+ */
+export function decodeBase64Url(base64Url: string): string {
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  return decodeBase64(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
 } 

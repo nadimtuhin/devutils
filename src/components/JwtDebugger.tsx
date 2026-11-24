@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { decodeBase64Url } from '../utils/base64';
 
 interface DecodedJwt {
   header: any;
@@ -19,8 +20,8 @@ export default function JwtDebugger() {
       }
 
       const decoded: DecodedJwt = {
-        header: JSON.parse(atob(parts[0])),
-        payload: JSON.parse(atob(parts[1])),
+        header: JSON.parse(decodeBase64Url(parts[0])),
+        payload: JSON.parse(decodeBase64Url(parts[1])),
         signature: parts[2]
       };
 
