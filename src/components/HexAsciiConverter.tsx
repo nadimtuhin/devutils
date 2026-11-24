@@ -11,7 +11,7 @@ export default function HexAsciiConverter() {
   const hexToAscii = (hex: string): string => {
     try {
       // Remove spaces and validate hex string
-      const cleanHex = hex.replace(/\\s/g, '');
+      const cleanHex = hex.replace(/\s/g, '');
       if (!/^[0-9A-Fa-f]*$/.test(cleanHex)) {
         throw new Error('Invalid hex string');
       }
